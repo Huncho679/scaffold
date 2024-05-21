@@ -2,33 +2,43 @@
 {{!< main }}
 
 {{! New Post Submission Form }}
-<section class="content-container">
+<section class="content-container flex">
     {{#if loggedIn}}
         <!-- show the create post form when logged in -->
-        <section class="post-form">
+        <section class="post-form half">
             <!-- make a header here -->
-            <form action="/posts" method="POST">
+
+            <h2 class="text-align">Create a New Post</h2>
+
+
+            <form action="/posts" method="POST" class="flex flex-col gap">
                 <!-- title input field name = "title" -->
                 <!-- text area input field name = "content" -->
+                <input type="text" placeholder="Title" name="title">
+                <textarea name="content" rows="25" cols="25" placeholder="Today I ate a Burrito and..."></textarea>
 
-                <div class="form-actions">
+
+                <div class="form-actions flex gap-sm">
                     <button type="button" class="emoji-button" onclick="toggleEmojiPanel()">😀</button>
                     <button type="submit" class="post-button">Post</button>
                 </div>
             </form>
 
-            <div id="emoji-container" class="emoji-panel" style="display: none;">
+            <div id="emoji-container" class="emoji-panel">
                 <!-- input field for the emoji search, use oninput="searchEmojis() -->
                 <!-- a div, id = "emoji-grid" -->
+                <input type="text" placeholder="Emojis" class="emoji-search full">
+                <div></div>
             </div>
         </section>
-    {{/if}}
 
-    <section class="posts-list">
+        <section class="posts-list half">
         <!-- recent posts -->
 
+        <h2 class="text-align">Recent Posts</h2>
+
         {{#if posts.length}}
-        <ul>
+        <ul class="flex flex-col gap">
             {{#each posts}}
                 <!-- you have to pass the user in to posts and this is the syntax -->
                 {{> post this user=../user}}            
@@ -38,6 +48,24 @@
             <!-- no posts, oh no, what now? -->
         {{/if}}
     </section>
+    {{else}}
+        <section class="posts-list flex flex-col full align-center">
+        <!-- recent posts -->
+
+            <h2>Recent Posts</h2>
+
+            {{#if posts.length}}
+            <ul>
+                {{#each posts}}
+                    <!-- you have to pass the user in to posts and this is the syntax -->
+                    {{> post this user=../user}}            
+                {{/each}}
+            </ul>
+            {{else}}
+                <!-- no posts, oh no, what now? -->
+            {{/if}}
+        </section>
+    {{/if}}
 </section>
 
 

@@ -1,10 +1,12 @@
+//& dependencies - import necessary modules
+
 const express = require('express');
 const expressHandlebars = require('express-handlebars');
 const session = require('express-session');
-const canvas = require('canvas');
+const { createCanvas, loadImage } = require('canvas');
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Configuration and Setup
+//& Configuration and Setup - express application created, port set to 3000
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 const app = express();
@@ -36,8 +38,8 @@ const PORT = 3000;
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-// Set up Handlebars view engine with custom helpers
-//
+//& Set up Handlebars as the view engine and defines custom helpers
+
 app.engine(
     'handlebars',
     expressHandlebars.engine({
@@ -59,7 +61,8 @@ app.set('view engine', 'handlebars');
 app.set('views', './views');
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Middleware
+//& Middleware
+//^ middleware configures session management with a secret key and sets resave and saveUninitialized to false for better security and performance.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 app.use(
@@ -73,7 +76,8 @@ app.use(
 
 // Replace any of these variables below with constants for your application. These variables
 // should be used in your template files. 
-// 
+//^ this locals middleware sets some default local variables that will be available in all views
+
 app.use((req, res, next) => {
     res.locals.appName = 'MicroBlog';
     res.locals.copyrightYear = 2024;
@@ -132,11 +136,29 @@ app.post('/like/:id', (req, res) => {
     // TODO: Update post likes
 });
 app.get('/profile', isAuthenticated, (req, res) => {
-    // TODO: Render profile page
+    const user = getCurrentUser(req);
+    if (user) {
+        const userPosts = getUserPosts(user.username);
+        res.render('profile', { profileError: req.query.error, user, posts: userPosts });
+    } else {
+        res.redirect('/login');
+    }
 });
+
+
 app.get('/avatar/:username', (req, res) => {
-    // TODO: Serve the avatar image for the user
+    const username = req.params.username;
+    if (!username) {
+        return res.status(400).send('Username is required');
+    }
+
+    const firstLetter = username.charAt(0).toUpperCase();
+    const avatar = generateAvatar(firstLetter);
+
+    res.set('Content-Type', 'image/png');
+    res.send(avatar);
 });
+
 app.post('/register', (req, res) => {
     registerUser(req, res);
 });
@@ -184,6 +206,10 @@ function findUserById(userId) {
     return user;
 }
 
+function getUserPosts(username) {
+    return posts.filter(post => post.username === username);
+}
+
 function getCurrentDateTime() {
     const now = new Date();
     
@@ -216,7 +242,7 @@ function addUser(username) {
 
 // Middleware to check if user is authenticated
 function isAuthenticated(req, res, next) {
-    console.log(req.session.userId);
+    console.log('isAuthenticated check:', req.session.userId); 
     if (req.session.userId) {
         next();
     } else {
@@ -226,7 +252,7 @@ function isAuthenticated(req, res, next) {
 
 // Function
 function registerUser(req, res) {
-    console.log(req.body.register);
+   console.log(req.body.register);
    const success = addUser(req.body.register);
    console.log(users);
    if (success) {
@@ -237,17 +263,30 @@ function registerUser(req, res) {
 }
 
 // Function to login a user
+// function loginUser(req, res) {
+//     const user = findUserByUsername(req.body.username);
+//     if (user === undefined) {
+//         req.query.error = "User doesn't exist";
+//         return res.status(401).redirect('/login');
+//     } else {
+//         console.log(req.session.userId);
+//         req.session.loggedIn = true;
+//         req.session.userId = user.userId;
+//         return res.status(200).redirect('/');
+//     }
+// }
+
 function loginUser(req, res) {
     const user = findUserByUsername(req.body.username);
-    if (user === undefined) {
-        req.query.error = "User doesn't exist";
-        return res.status(401).redirect('/login');
+    if (!user) {
+        res.redirect('/login?error=User doesn\'t exist');
     } else {
         req.session.loggedIn = true;
-        req.session.userId = user.userId;
-        return res.status(200).redirect('/');
+        req.session.userId = user.id; // Make sure to set the correct user ID
+        res.redirect('/');
     }
 }
+
 
 // Function to logout a user
 function logoutUser(req, res) {
@@ -277,7 +316,11 @@ function handleAvatar(req, res) {
 
 // Function to get the current user from session
 function getCurrentUser(req) {
-    // TODO: Return the user object if the session user ID matches
+    const userId = req.session.userId;
+    if (userId) {
+        return findUserById(userId); // Assuming you have a function that finds a user by their ID
+    }
+    return null;
 }
 
 // Function to get all posts, sorted by latest first
@@ -300,11 +343,21 @@ function addPost(title, content, user) {
 
 // Function to generate an image avatar
 function generateAvatar(letter, width = 100, height = 100) {
-    // TODO: Generate an avatar image with a letter
-    // Steps:
-    // 1. Choose a color scheme based on the letter
-    // 2. Create a canvas with the specified width and height
-    // 3. Draw the background color
-    // 4. Draw the letter in the center
-    // 5. Return the avatar as a PNG buffer
+    const canvas = createCanvas(width, height);
+    const context = canvas.getContext('2d');
+
+    // Background color
+    context.fillStyle = '#000'; // You can customize the color
+    context.fillRect(0, 0, width, height);
+
+    // Text color and font
+    context.fillStyle = '#fff'; // You can customize the color
+    context.font = `${height / 2}px Arial`;
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+
+    // Draw the letter
+    context.fillText(letter, width / 2, height / 2);
+
+    return canvas.toBuffer('image/png');
 }
