@@ -19,14 +19,13 @@
             <h1>{{{appName}}}</h1>
         </div>
         <nav>
-            <ul class="flex list gap">
+            <ul class="flex list gap align-center">
                 <!-- conditional rendering based on variables - Is the user logged in?-->
                 {{#if loggedIn}}
                     <li><a href="/" class="list-item">Home</a></li>
                     <li><a href="profile" class="list-item">Profile</a></li>
                     <li><a href="/logout" class="list-item">Logout <span>{{user.username}}</span> </a></li>
                     <div class="user-info">
-
                         <!-- conditional rendering based on variables -->
                         <img src="{{#if user.avatar_url}}
                                         {{user.avatar_url}}
@@ -34,7 +33,9 @@
                                         /avatar/{{user.username}}
                                     {{/if}}" 
                                     alt="User Avatar" 
-                                    class="header-avatar">
+                                    class="header-avatar"
+                                    width="50px"
+                                    height="50px">
                     </div>
                 {{else}}
                     <li><a href="/" class="list-item">Home</a></li>

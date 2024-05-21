@@ -1,9 +1,18 @@
+
 .flex  {
     display: flex;
 }
 
 .flex-col {
     flex-direction: column;
+}
+
+.align-self-start {
+    align-self: flex-start;
+}
+
+.align-self-end {
+    align-self: flex-end;
 }
 
 .block {
@@ -22,6 +31,10 @@
     gap:10px;
 }
 
+.gap-lg {
+    gap: 30px;
+}
+
 .align-center {
     align-items: center;
 }
@@ -32,6 +45,14 @@
 
 .justify-between {
     justify-content: space-between;
+}
+
+.text-align {
+    text-align: center;
+}
+
+.offset {
+    margin-top: -16px;
 }
 
 
@@ -82,10 +103,87 @@
     color: #91a7ff;
 }
 
+.list-item:hover {
+    text-decoration: underline;
+}
+
 .footer {
     width: 100%;
     height: 75px;
     background-color: #dbe4ff;
+}
+
+.half {
+    width: 50%;
+}
+
+.full {
+    width: 100%;
+}
+
+.emoji-button {
+    flex-grow: 1;
+    padding-left: 0px;
+    padding-right: 0px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background-color: #dbe4ff;
+}
+
+.post-button {
+    flex-grow: 24;
+    padding-left: 0px;
+    padding-right: 0px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background-color: #dbe4ff;
+}
+
+.emoji-panel {
+    margin-top: 10px;
+}
+
+.emoji-search {
+    padding-top: 10px;
+    padding-bottom: 10px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+}
+
+.post {
+    box-shadow: 2px 2px 8px 0px rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    width: 80%;
+}
+
+.post-avatar {
+    padding: 20px;
+}
+
+.post-status-bar {
+    margin-top: 0px;
+}
+
+.bar {
+    width: 100%;
+    height: 1px;
+    background-color: #dbe4ff;
+}
+
+.like-btn {
+    background-color: white;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    border: 1px solid transparent;
+}
+
+.like-btn:hover {
+    background-color: red;
 }
 
 
