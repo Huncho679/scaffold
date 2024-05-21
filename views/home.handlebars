@@ -6,10 +6,13 @@
     {{#if loggedIn}}
         <!-- show the create post form when logged in -->
         <section class="post-form">
-            <!-- make a header here -->
+            <h2>Create a New Post</h2>
             <form action="/posts" method="POST">
-                <!-- title input field name = "title" -->
-                <!-- text area input field name = "content" -->
+                <label for="title">Title:</label>
+                <input type="text" id="title" name="title" required>
+
+                <label for="content">Content:</label>
+                <textarea id="content" name="content" required></textarea>
 
                 <div class="form-actions">
                     <button type="button" class="emoji-button" onclick="toggleEmojiPanel()">😀</button>
@@ -18,8 +21,8 @@
             </form>
 
             <div id="emoji-container" class="emoji-panel" style="display: none;">
-                <!-- input field for the emoji search, use oninput="searchEmojis() -->
-                <!-- a div, id = "emoji-grid" -->
+                <input type="text" id="emoji-search" placeholder="Search emojis..." oninput="searchEmojis()">
+                <div id="emoji-grid"></div>
             </div>
         </section>
     {{/if}}
@@ -36,6 +39,7 @@
         </ul>
         {{else}}
             <!-- no posts, oh no, what now? -->
+            <p>No posts to display.</p>
         {{/if}}
     </section>
 </section>

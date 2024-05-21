@@ -1,3 +1,4 @@
+{{!-- menu bar --}}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -22,7 +23,7 @@
                 <!-- conditional rendering based on variables - Is the user logged in?-->
                 {{#if loggedIn}}
                     <li><a href="/" class="list-item">Home</a></li>
-                    <li><a href="/profile" class="list-item">Profile</a></li>
+                    <li><a href="profile" class="list-item">Profile</a></li>
                     <li><a href="/logout" class="list-item">Logout <span>{{user.username}}</span> </a></li>
                     <div class="user-info">
 
