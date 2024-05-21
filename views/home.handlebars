@@ -24,12 +24,17 @@
                 </div>
             </form>
 
-            <div id="emoji-container" class="emoji-panel">
+            {{!-- <div id="emoji-container" class="emoji-panel">
                 <!-- input field for the emoji search, use oninput="searchEmojis() -->
                 <!-- a div, id = "emoji-grid" -->
                 <input type="text" placeholder="Emojis" class="emoji-search full">
                 <div></div>
+            </div> --}}
+            <div id="emoji-container" class="emoji-panel" style="display: none;">
+                <input type="text" id="emoji-search" placeholder="Search emojis..." oninput="searchEmojis()" class="emoji-search full">
+                <div id="emoji-grid"></div>
             </div>
+
         </section>
 
         <section class="posts-list half">
@@ -113,20 +118,16 @@ function displayEmojis(emojis,limit=200) {
 
 function searchEmojis() {
     const searchTerm = document.getElementById('emoji-search').value.toLowerCase();
-    // array.filter takes a predicate
-    // use string.includes. 
-
-    const filteredEmojis = allEmojis.filter(...);
-    
+    const filteredEmojis = allEmojis.filter(emoji => emoji.slug.includes(searchTerm));
     displayEmojis(filteredEmojis);
 }
 
-function insertEmoji(emoji) {
-    // put an emoji on a form somehow. 
 
-    // do this when you're doing getting the emoji on the form
-    //
+function insertEmoji(emoji) {
+    const textarea = document.querySelector('textarea[name="content"]');
+    textarea.value += emoji;
     textarea.focus();  // Keep focus on the textarea
 }
+
 </script>
 
