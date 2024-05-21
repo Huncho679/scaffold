@@ -256,6 +256,7 @@ function addUser(username) {
 // Middleware to check if user is authenticated
 function isAuthenticated(req, res, next) {
     console.log('isAuthenticated check:', req.session.userId); 
+    console.log(getCurrentUser(req));
     if (req.session.userId) {
         next();
     } else {

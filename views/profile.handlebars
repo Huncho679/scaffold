@@ -18,13 +18,13 @@
     </section>
 </div>
 
-<section class="user-posts">
+<section class="user-posts text-align">
     <!-- Display a custom title for the user's posts -->
     <h2>Your {{{postNeoType}}}s</h2>
     
     <!-- Conditional rendering of the user's posts -->
     {{#if posts.length}}
-        <ul class="flex flex-col gap-lg">
+        <div class="profile-posts-list flex flex-col gap-lg">
             {{#each posts}}
                 {{!-- <li class="post">
                     <h3>{{this.title}}</h3>
@@ -34,7 +34,7 @@
                 </li> --}}
                 {{> post this user=../user}}
             {{/each}}
-        </ul>
+        </div>
     {{else}}
         <p>You have not posted yet, poster.</p>
     {{/if}}

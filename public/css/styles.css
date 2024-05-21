@@ -85,9 +85,8 @@ body {
 }
 
 .profile-container {
-    padding-left: 20px;
-    padding-right: 20px;
-    padding-top: 20px;
+    padding-top: 40px;
+    padding-bottom: 40px;
 }
 
 .user-posts {
@@ -213,6 +212,10 @@ body {
 
 .like-btn:hover {
     background-color: red;
+}
+
+.profile-posts-list {
+    margin-bottom: 40px;
 }
 
 .test {
