@@ -1,5 +1,5 @@
 {{! Partial for a single post }}
-<div class="post flex gap full">
+<div class="post flex gap full" id={{id}}>
     <div class="post-avatar">
         <img src="/avatar/{{username}}" width="75px" height="75px">
     </div>
@@ -11,8 +11,12 @@
             <!-- everything that is shown in the status bar -->
             <!-- Heart = ♥ -->
             <!-- font awesome  trashcan = <i class="fas fa-trash-alt"> </i>-->
-            <button><i class="fas fa-trash-alt"></i></button>
-            <button class="like-btn" onclick="handleLikeClick()">♥</button>
+            {{#ifCond username user.username}}
+                <button class="trash-btn"><i class="fas fa-trash-alt"></i></button>
+            {{else}}
+                
+            {{/ifCond}}
+            <button class="like-btn" onclick="handleLikeClick(event)">♥</button>
             <p>{{likes}} likes</p>
             <p>Posted by {{username}} on {{timestamp}}</p> 
         </div>        
@@ -21,10 +25,9 @@
 <script>
 
     function handleLikeClick(event) {
-        //const postId = event.target.getAttribute('data-id');
+        const postId = Document.getElementById('')
 
 
-        const posts      
     }
 
     function handleDeleteClick(event) {
