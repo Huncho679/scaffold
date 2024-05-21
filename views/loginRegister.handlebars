@@ -1,0 +1,39 @@
+{{! Use the main layout }}
+{{!< main }}
+
+<section class="login-register flex align-center justify-center gap">
+    <section class="card">
+        <section class="content-area">
+            <h2>Login</h2>
+            <!-- errors will appear here -->
+            {{#if loginError}}
+                <p style="color: red;">{{loginError}}</p>
+            {{/if}}
+            <form action="/login" method="POST" class="flex flex-col">
+                <label for='login'>Username:</label>
+                <input type="text" id="login" name="username">     
+                <button type="submit" class="placement btn">Login</button>
+            </form>
+        </section>
+    </section>
+
+    <p>--OR--</p>
+
+    <!-- say --OR-- ... with style -->
+
+    <section class="card">
+        <section class="content-area">
+            <h2>Register</h2>
+            <!-- errors will appear here -->
+            {{#if regError}}
+                <p style="color: red;">{{regError}}</p>
+            {{/if}}
+            <form action="/register" method="POST" class="flex flex-col">
+                <!-- the registration form goes here -->
+                <label for='register'>Username:</label>
+                <input type="text" id="register" name="register">
+                <button type="submit" class="placement btn">Register</button>
+            </form>
+        </section>
+    </section>
+</section>

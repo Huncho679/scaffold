@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">   
+    
+    <!-- font awesome for the trashcan icon --> 
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">    
+    
+    <title>{{{appName}}}</title>
+
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <header class="flex navbar align-center justify-between">
+        <div class="logo flex align-center gap-sm">
+            <img src="images/logo.png" class="header-logo">
+            <h1>{{{appName}}}</h1>
+        </div>
+        <nav>
+            <ul class="flex list gap">
+                <!-- conditional rendering based on variables - Is the user logged in?-->
+                {{#if loggedIn}}
+                    <li><a href="/" class="list-item">Home</a></li>
+                    <li><a href="/profile" class="list-item">Profile</a></li>
+                    <li><a href="/logout" class="list-item">Logout <span>{{user.username}}</span> </a></li>
+                    <div class="user-info">
+
+                        <!-- conditional rendering based on variables -->
+                        <img src="{{#if user.avatar_url}}
+                                        {{user.avatar_url}}
+                                    {{else}}
+                                        /avatar/{{user.username}}
+                                    {{/if}}" 
+                                    alt="User Avatar" 
+                                    class="header-avatar">
+                    </div>
+                {{else}}
+                    <li><a href="/" class="list-item">Home</a></li>
+                    <li><a href="/login" class="list-item">Login/Register</a></li>
+                {{/if}}
+            </ul>
+        </nav>
+    </header>
+
+    {{{body}}}
+
+    <footer class="footer flex align-center justify-center">
+        <p>© {{{copyrightYear}}} {{{appName}}}. All rights reserved.</p>
+    </footer>
+</body>
+</html>
