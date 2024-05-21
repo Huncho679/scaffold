@@ -38,7 +38,7 @@
         <h2 class="text-align">Recent Posts</h2>
 
         {{#if posts.length}}
-        <ul class="flex flex-col gap">
+        <ul class="flex flex-col gap align-center">
             {{#each posts}}
                 <!-- you have to pass the user in to posts and this is the syntax -->
                 {{> post this user=../user}}            
