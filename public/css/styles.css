@@ -1,4 +1,9 @@
 
+body {
+    height: 100vh;
+    width: 100%;
+}
+
 .flex  {
     display: flex;
 }
@@ -72,6 +77,22 @@
 
 .content-area {
     padding: 10px;
+}
+
+.content-container {
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+.profile-container {
+    padding-left: 20px;
+    padding-right: 20px;
+    padding-top: 20px;
+}
+
+.user-posts {
+    padding-left: 20px;
+    padding-right: 20px;
 }
 
 .placement {
@@ -154,10 +175,18 @@
     border: 1px solid transparent;
 }
 
+.posts-list {
+    margin-bottom: 50px;
+}
+
 .post {
     box-shadow: 2px 2px 8px 0px rgba(0, 0, 0, 0.3);
     border-radius: 8px;
-    width: 80%;
+    width: 100%;
+}
+
+.post-content {
+    padding: 10px;
 }
 
 .post-avatar {
@@ -184,6 +213,10 @@
 
 .like-btn:hover {
     background-color: red;
+}
+
+.test {
+    background-color: green;
 }
 
 

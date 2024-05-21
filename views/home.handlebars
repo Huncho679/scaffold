@@ -55,7 +55,7 @@
             <h2>Recent Posts</h2>
 
             {{#if posts.length}}
-            <ul>
+            <ul class="flex flex-col gap-lg">
                 {{#each posts}}
                     <!-- you have to pass the user in to posts and this is the syntax -->
                     {{> post this user=../user}}            

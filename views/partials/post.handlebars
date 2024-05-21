@@ -11,7 +11,7 @@
             <!-- everything that is shown in the status bar -->
             <!-- Heart = ♥ -->
             <!-- font awesome  trashcan = <i class="fas fa-trash-alt"> </i>-->
-            <button class="like-btn">♥</button>
+            <button class="like-btn" onclick="handleLikeClick()">♥</button>
             <p>{{likes}} likes</p>
             <p>Posted by {{username}} on {{timestamp}}</p>
         </div>        
@@ -20,9 +20,10 @@
 <script>
 
     function handleLikeClick(event) {
-        const postId = event.target.getAttribute('data-id');
+        //const postId = event.target.getAttribute('data-id');
+        
 
-        // you might want to "fetch" something...        
+        const posts      
     }
 
     function handleDeleteClick(event) {

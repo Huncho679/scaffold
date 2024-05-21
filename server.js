@@ -131,6 +131,10 @@ app.get('/post/:id', (req, res) => {
 });
 app.post('/posts', (req, res) => {
     // TODO: Add a new post and redirect to home
+    const { title, content } = req.body;
+    const user = getCurrentUser(req);
+    addPost(title, content, user);
+    res.status(200).redirect('/');
 });
 app.post('/like/:id', (req, res) => {
     // TODO: Update post likes
@@ -188,6 +192,11 @@ app.listen(PORT, () => {
 let posts = [
     { id: 1, title: 'Sample Post', content: 'This is a sample post.', username: 'SampleUser', timestamp: '2024-01-01 10:00', likes: 0 },
     { id: 2, title: 'Another Post', content: 'This is another sample post.', username: 'AnotherUser', timestamp: '2024-01-02 12:00', likes: 0 },
+    { id: 3, title: 'Another Post', content: 'This is another sample post.', username: 'AnotherUser', timestamp: '2024-01-02 12:00', likes: 0 },
+    { id: 4, title: 'Another Post', content: 'This is another sample post.', username: 'AnotherUser', timestamp: '2024-01-02 12:00', likes: 0 },
+    { id: 5, title: 'Another Post', content: 'This is another sample post.', username: 'AnotherUser', timestamp: '2024-01-02 12:00', likes: 0 },
+    { id: 6, title: 'Another Post', content: 'This is another sample post.', username: 'AnotherUser', timestamp: '2024-01-02 12:00', likes: 0 },
+    { id: 7, title: 'Another Post', content: 'This is another sample post.', username: 'AnotherUser', timestamp: '2024-01-02 12:00', likes: 0 },
 ];
 let users = [
     { id: 1, username: 'SampleUser', avatar_url: undefined, memberSince: '2024-01-01 08:00' },
