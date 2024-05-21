@@ -207,11 +207,23 @@ body {
     width: 25px;
     height: 25px;
     border-radius: 50%;
-    border: 1px solid transparent;
+    border: 1px solid gray;
 }
 
 .like-btn:hover {
-    background-color: red;
+    border: 1px solid black;
+}
+
+.trash-btn {
+    background-color: white;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    border: 1px solid gray;
+}
+
+.trash-btn:hover {
+    border: 1px solid black;
 }
 
 .profile-posts-list {

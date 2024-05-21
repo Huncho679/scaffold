@@ -79,7 +79,7 @@ app.use(
 //^ this locals middleware sets some default local variables that will be available in all views
 
 app.use((req, res, next) => {
-    res.locals.appName = 'MicroBlog';
+    res.locals.appName = 'Food Blog';
     res.locals.copyrightYear = 2024;
     res.locals.postNeoType = 'Post';
     res.locals.loggedIn = req.session.loggedIn || false;
@@ -157,11 +157,12 @@ app.get('/avatar/:username', (req, res) => {
     }
 
     const firstLetter = username.charAt(0).toUpperCase();
-    const avatar = generateAvatar(firstLetter);
+    const avatar = generateAvatar(firstLetter, username);
 
     res.set('Content-Type', 'image/png');
     res.send(avatar);
 });
+
 
 app.post('/register', (req, res) => {
     registerUser(req, res);
@@ -261,16 +262,16 @@ function isAuthenticated(req, res, next) {
 }
 
 // Function
-function registerUser(req, res) {
-   console.log(req.body.register);
-   const success = addUser(req.body.register);
-   console.log(users);
-   if (success) {
-    res.status(200).redirect('/login');
-   } else {
-    res.status(401).redirect('/login');
-   }
-}
+    function registerUser(req, res) {
+    console.log(req.body.register);
+    const success = addUser(req.body.register);
+    console.log(users);
+    if (success) {
+        res.status(200).redirect('/login');
+    } else {
+        res.status(401).redirect('/login');
+    }
+    }
 
 // Function to login a user
 // function loginUser(req, res) {
@@ -351,17 +352,26 @@ function addPost(title, content, user) {
     posts.push(newPost);
 }
 
+const colors = [
+    '#FF5733', '#33FF57', '#3357FF', '#FF33A6', '#FF8F33', 
+    '#33FFF3', '#A633FF', '#33FF8F', '#FF3333', '#33FF85'
+];
+
 // Function to generate an image avatar
-function generateAvatar(letter, width = 100, height = 100) {
+function generateAvatar(letter, username, width = 100, height = 100) {
     const canvas = createCanvas(width, height);
     const context = canvas.getContext('2d');
 
+    // Determine color based on username to keep it consistent
+    const colorIndex = username.charCodeAt(0) % colors.length;
+    const backgroundColor = colors[colorIndex];
+
     // Background color
-    context.fillStyle = '#000'; // You can customize the color
+    context.fillStyle = backgroundColor;
     context.fillRect(0, 0, width, height);
 
     // Text color and font
-    context.fillStyle = '#fff'; // You can customize the color
+    context.fillStyle = '#fff'; // Keep text color white
     context.font = `${height / 2}px Arial`;
     context.textAlign = 'center';
     context.textBaseline = 'middle';
