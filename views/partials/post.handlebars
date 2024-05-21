@@ -1,7 +1,11 @@
 {{! Partial for a single post }}
 <div class="post flex gap full">
     <div class="post-avatar">
-        <img src="/avatar/{{username}}" width="75px" height="75px">
+        <img src="{{#if user.avatar_url}}
+                      {{user.avatar_url}}
+                  {{else}}
+                      /avatar/{{user.username}}
+                  {{/if}}" alt="User Avatar" width="75px" height="75px">
     </div>
     <div class="post-content preserve-newlines">
        <p>{{title}}</p>

@@ -130,12 +130,16 @@ app.get('/post/:id', (req, res) => {
     // TODO: Render post detail page
 });
 app.post('/posts', (req, res) => {
-    // TODO: Add a new post and redirect to home
     const { title, content } = req.body;
     const user = getCurrentUser(req);
-    addPost(title, content, user);
-    res.status(200).redirect('/');
+    if (user) {
+        addPost(title, content, user);
+        res.status(200).redirect('/');
+    } else {
+        res.status(401).redirect('/login');
+    }
 });
+
 app.post('/like/:id', (req, res) => {
     // TODO: Update post likes
 });
@@ -343,7 +347,7 @@ function addPost(title, content, user) {
         id: posts.length + 1,
         title,
         content,
-        username: user,
+        username: user.username,
         timestamp: getCurrentDateTime(),
         likes: 0
     };
