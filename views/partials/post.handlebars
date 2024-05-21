@@ -1,4 +1,67 @@
-{{! Partial for a single post }}
+{{!-- Partial for a single post --}}
+<div class="post flex gap full" id="{{id}}">
+    <div class="post-avatar">
+        <img src="/avatar/{{username}}" width="75px" height="75px">
+    </div>
+    <div class="post-content preserve-newlines">
+       <p>{{title}}</p>
+       <p>{{content}}</p>
+       <div class="bar"></div>
+        <div class="post-status-bar flex gap-sm align-center">
+            {{#ifCond username user.username}}
+                <button class="trash-btn" onclick="handleDeleteClick(event)"><i class="fas fa-trash-alt"></i></button>
+            {{else}}
+                
+            {{/ifCond}}
+            <button class="like-btn" onclick="handleLikeClick(event)" data-id="{{id}}">♥</button>
+            <p id="like-count-{{id}}">{{likes}} likes</p>
+            <p>Posted by {{username}} on {{timestamp}}</p> 
+        </div>        
+    </div>
+</div>
+
+<script>
+    function handleLikeClick(event) {
+        const buttonElement = event.target;
+        const postId = buttonElement.getAttribute('data-id');
+
+        fetch(`/like/${postId}`, {
+            method: 'POST',
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const likeCountElement = document.getElementById(`like-count-${postId}`);
+                likeCountElement.textContent = `${data.likes} likes`;
+            } else {
+                console.error('Failed to like post');
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    function handleDeleteClick(event) {
+        const buttonElement = event.target.closest('.trash-btn');
+        const postId = buttonElement.getAttribute('data-id');
+
+        fetch(`/delete/${postId}`, {
+            method: 'POST',
+        })
+        .then(response => {
+            if (response.ok) {
+                document.getElementById(postId).remove();
+            } else {
+                console.error('Failed to delete post');
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+</script>
+
+
+
+
+{{!-- {{! Partial for a single post }}
 <div class="post flex gap full" id={{id}}>
     <div class="post-avatar">
         <img src="/avatar/{{username}}" width="75px" height="75px">
@@ -37,4 +100,4 @@
         // you might want to "fetch" something...        
         
     }    
-</script>
+</script> --}}

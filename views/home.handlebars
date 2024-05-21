@@ -90,9 +90,11 @@ async function toggleEmojiPanel() {
     const container = document.getElementById('emoji-container');
     container.style.display = container.style.display === 'none' ? 'block' : 'none';
 
+    let apiKey = "{{ apiKey }}"
+
 
     if(container.style.display === 'block' && allEmojis.length == 0){
-        const res = await fetch('https://emoji-api.com/emojis?access_key=26624fa905057093ed6e6dcd4ae1c7435aa0efe3');
+        const res = await fetch(`https://emoji-api.com/emojis?access_key=${apiKey}`);
         const data = await res.json();
         console.log('here', data);
         allEmojis = data;

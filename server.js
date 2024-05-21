@@ -4,6 +4,7 @@ const express = require('express');
 const expressHandlebars = require('express-handlebars');
 const session = require('express-session');
 const { createCanvas, loadImage } = require('canvas');
+require('dotenv').config();
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //& Configuration and Setup - express application created, port set to 3000
@@ -11,6 +12,7 @@ const { createCanvas, loadImage } = require('canvas');
 
 const app = express();
 const PORT = 3000;
+const accessToken = process.env.EMOJI_API_KEY;
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -84,6 +86,7 @@ app.use((req, res, next) => {
     res.locals.postNeoType = 'Post';
     res.locals.loggedIn = req.session.loggedIn || false;
     res.locals.userId = req.session.userId || '';
+    res.locals.apiKey = accessToken;
     next();
 });
 
@@ -137,7 +140,15 @@ app.post('/posts', (req, res) => {
     res.status(200).redirect('/');
 });
 app.post('/like/:id', (req, res) => {
-    // TODO: Update post likes
+    const postId = parseInt(req.params.id, 10);
+    const post = posts.find(post => post.id === postId);
+
+    if (post) {
+        post.likes += 1;
+        res.json({ success: true, likes: post.likes });
+    } else {
+        res.status(404).json({ success: false, message: 'Post not found' });
+    }
 });
 app.get('/profile', isAuthenticated, (req, res) => {
     const user = getCurrentUser(req);
