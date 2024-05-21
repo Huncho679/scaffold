@@ -11,7 +11,7 @@
             <!-- everything that is shown in the status bar -->
             <!-- Heart = ♥ -->
             <!-- font awesome  trashcan = <i class="fas fa-trash-alt"> </i>-->
-            <button class="like-btn">♥</button>
+            <button class="like-btn" onclick="handleLikeClick()">♥</button>
             <p>{{likes}} likes</p>
             <p>Posted by {{username}} on {{timestamp}}</p>
         </div>        
@@ -20,20 +20,10 @@
 <script>
 
     function handleLikeClick(event) {
-        {{!-- const postId = event.target.getAttribute('data-id');
+        //const postId = event.target.getAttribute('data-id');
         
-        // Implement the functionality to handle the like action, potentially using fetch to send a request to the server
-        fetch(`/like/${postId}`, {
-            method: 'POST'
-        }).then(response => {
-            if (response.ok) {
-                // Handle the response, e.g., update the like count in the UI
-                // You might need to refresh the post data or update the UI dynamically
-                console.log('Post liked successfully');
-            } else {
-                console.error('Failed to like post');
-            }
-        }); --}}
+
+        const posts      
     }
 
     function handleDeleteClick(event) {
