@@ -136,7 +136,7 @@ app.use(express.json());                            // Parse JSON bodies (as sen
 //
 app.get('/', async (req, res) => {
     const posts = await getPosts();
-    const user = getCurrentUser(req) || {};
+    const user = await getCurrentUser(req) || {};
     res.render('home', { posts, user, loggedIn: req.session.loggedIn });
 });
 
@@ -164,10 +164,10 @@ app.get('/error', (req, res) => {
 app.get('/post/:id', (req, res) => {
     // TODO: Render post detail page
 });
-app.post('/posts', (req, res) => {
+app.post('/posts', async (req, res) => {
     // TODO: Add a new post and redirect to home
     const { title, content } = req.body;
-    const user = getCurrentUser(req);
+    const user = await getCurrentUser(req);
     addPost(title, content, user);
     res.status(200).redirect('/');
 });
@@ -192,8 +192,8 @@ app.post('/like/:id', isAuthenticated, (req, res) => {
         res.status(404).json({ success: false, message: 'Post not found' });
     }
 });
-app.get('/profile', isAuthenticated, (req, res) => {
-    const user = getCurrentUser(req);
+app.get('/profile', isAuthenticated, async (req, res) => {
+    const user = await getCurrentUser(req);
     if (user) {
         const userPosts = getUserPosts(user.username);
         res.render('profile', { profileError: req.query.error, user, posts: userPosts });
@@ -220,8 +220,8 @@ app.get('/avatar/:username', (req, res) => {
 app.post('/register', (req, res) => {
     registerUser(req, res);
 });
-app.post('/login', (req, res) => {
-    loginUser(req, res);
+app.post('/login', async (req, res) => {
+    await loginUser(req, res);
 });
 app.get('/logout', (req, res) => {
     logoutUser(req, res);
@@ -269,9 +269,22 @@ function findUserByUsername(username) {
 }
 
 // Function to find a user by user ID
-function findUserById(userId) {
-    const user = users.find((user) => user.id === userId);
-    return user;
+// function findUserById(userId) {
+//     const user = users.find((user) => user.id === userId);
+//     return user;
+// }
+
+async function findUserById(userId) {
+    try {
+        const db = await sqlite.open({ filename: dbFileName, driver: sqlite3.Database });
+
+        const user = await db.get('SELECT * FROM users WHERE hashedGoogleId = ?', [userId]);
+
+        return user; // Returns the user object if found, null otherwise
+    } catch (error) {
+        console.error('Error finding user by ID:', error);
+        throw error; // Propagate the error
+    }
 }
 
 function getUserPosts(username) {
@@ -312,9 +325,12 @@ function addUser(username) {
 function isAuthenticated(req, res, next) {
     //console.log('isAuthenticated check:', req.session.userId); 
     //console.log(getCurrentUser(req));
+    console.log(req.session.userId);
     if (req.session.userId) {
+        console.log('in here');
         next();
     } else {
+        console.log('not in here');
         if (req.originalUrl.startsWith('/like/')) {
             res.status(401).json({ success: false, message: 'Unauthorized' });
         } else {
@@ -350,27 +366,31 @@ function isAuthenticated(req, res, next) {
 //     }
 // }
 
-function loginUser(req, res) {
-    console.log("In loginUser function");
-    const user = findUserByUsername(req.body.username);
-    //const userExists = checkUserExists(req.body.username);
+async function loginUser(req, res) {
+    //const user = findUserByUsername(req.body.username);
+    const user = await checkUsernameExists(req.body.username);
+    console.log(user);
     if (!user) {
         res.redirect('/login?error=User doesn\'t exist');
     } else {
         req.session.loggedIn = true;
         console.log("is logged in:" , req.session.loggedIn);
-        req.session.userId = user.id; // Ensure the correct user ID is set
+        req.session.userId = user.hashedGoogleId; // Ensure the correct user ID is set
+        console.log(req.session.userId);
         res.redirect('/');
     }
 }
 
-async function checkUserExists(username) {
+async function checkUsernameExists(username) {
     try {
+        const db = await sqlite.open({ filename: dbFileName, driver: sqlite3.Database });
+
         const user = await db.get('SELECT * FROM users WHERE username = ?', [username]);
-        return !!user; // Returns true if user exists, false otherwise
+
+        return user; 
     } catch (error) {
-        console.error('Error checking user existence:', error);
-        return false; // Return false in case of any error
+        console.error('Error checking username existence:', error);
+        throw error; // Propagate the error
     }
 }
 
@@ -401,10 +421,11 @@ function handleAvatar(req, res) {
 }
 
 // Function to get the current user from session
-function getCurrentUser(req) {
+async function getCurrentUser(req) {
     const userId = req.session.userId;
     if (userId) {
-        return findUserById(userId); // Assuming you have a function that finds a user by their ID
+        const userToReturn = await findUserById(userId);
+        return userToReturn; // Assuming you have a function that finds a user by their ID
     }
     return null;
 }
@@ -442,14 +463,14 @@ async function getPosts() {
 //     posts.push(newPost);
 // }
 
-async function addPost(title, content, username) {
+async function addPost(title, content, user) {
     try {
         const db = await sqlite.open({ filename: dbFileName, driver: sqlite3.Database });
 
         // Insert the new post into the posts table
         await db.run(
-            'INSERT INTO posts (title, content, username, timestamp, likes) VALUES (?, ?, ?, datetime("now"), 0)',
-            [title, content, username]
+            'INSERT INTO posts (title, content, username, timestamp, likes) VALUES (?, ?, ?, ?, 0)',
+            [title, content, user.username, getCurrentDateTime()]
         );
 
         await db.close();
