@@ -92,7 +92,6 @@ async function toggleEmojiPanel() {
 
     let apiKey = "{{ apiKey }}"
 
-
     if(container.style.display === 'block' && allEmojis.length == 0){
         const res = await fetch(`https://emoji-api.com/emojis?access_key=${apiKey}`);
         const data = await res.json();

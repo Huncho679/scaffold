@@ -5,6 +5,10 @@ const expressHandlebars = require('express-handlebars');
 const session = require('express-session');
 const { createCanvas, loadImage } = require('canvas');
 require('dotenv').config();
+const sqlite = require('sqlite');
+const sqlite3 = require('sqlite3');
+//require("./populatedb")
+//require("./showdb")
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //& Configuration and Setup - express application created, port set to 3000
@@ -13,6 +17,8 @@ require('dotenv').config();
 const app = express();
 const PORT = 3000;
 const accessToken = process.env.EMOJI_API_KEY;
+const dbFileName = 'your_database_file.db';
+let db = "";
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -39,6 +45,32 @@ const accessToken = process.env.EMOJI_API_KEY;
             {{/ifCond}}
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
+
+async function connect() {
+    db = await sqlite.open({ filename: dbFileName, driver: sqlite3.Database });
+
+    await db.exec(`
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL UNIQUE,
+            hashedGoogleId TEXT NOT NULL UNIQUE,
+            avatar_url TEXT,
+            memberSince DATETIME NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS posts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            content TEXT NOT NULL,
+            username TEXT NOT NULL,
+            timestamp DATETIME NOT NULL,
+            likes INTEGER NOT NULL
+        );
+    `);
+
+    console.log('Established Connection with Database');
+    //await db.close();
+}
 
 //& Set up Handlebars as the view engine and defines custom helpers
 
@@ -102,8 +134,8 @@ app.use(express.json());                            // Parse JSON bodies (as sen
 // We pass the posts and user variables into the home
 // template
 //
-app.get('/', (req, res) => {
-    const posts = getPosts();
+app.get('/', async (req, res) => {
+    const posts = await getPosts();
     const user = getCurrentUser(req) || {};
     res.render('home', { posts, user, loggedIn: req.session.loggedIn });
 });
@@ -202,8 +234,13 @@ app.post('/delete/:id', isAuthenticated, (req, res) => {
 // Server Activation
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+app.listen(PORT, async () => {
+    try {
+        await connect();
+        console.log(`Server is running on http://localhost:${PORT}`);
+    } catch(err) {
+        console.log('in here', err);
+    }
 });
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -273,8 +310,8 @@ function addUser(username) {
 
 // Middleware to check if user is authenticated
 function isAuthenticated(req, res, next) {
-    console.log('isAuthenticated check:', req.session.userId); 
-    console.log(getCurrentUser(req));
+    //console.log('isAuthenticated check:', req.session.userId); 
+    //console.log(getCurrentUser(req));
     if (req.session.userId) {
         next();
     } else {
@@ -288,9 +325,10 @@ function isAuthenticated(req, res, next) {
 
 // Function
     function registerUser(req, res) {
-    console.log(req.body.register);
+   // console.log(req.body.register);
     const success = addUser(req.body.register);
-    console.log(users);
+
+    //console.log(users);
     if (success) {
         res.status(200).redirect('/login');
     } else {
@@ -314,7 +352,8 @@ function isAuthenticated(req, res, next) {
 
 function loginUser(req, res) {
     console.log("In loginUser function");
-    const user = findUserByUsername(req.body.username);
+    //const user = findUserByUsername(req.body.username);
+    const userExists = checkUserExists(req.body.username);
     if (!user) {
         res.redirect('/login?error=User doesn\'t exist');
     } else {
@@ -325,6 +364,15 @@ function loginUser(req, res) {
     }
 }
 
+async function checkUserExists(username) {
+    try {
+        const user = await db.get('SELECT * FROM users WHERE username = ?', [username]);
+        return !!user; // Returns true if user exists, false otherwise
+    } catch (error) {
+        console.error('Error checking user existence:', error);
+        return false; // Return false in case of any error
+    }
+}
 
 // Function to logout a user
 function logoutUser(req, res) {
@@ -362,21 +410,55 @@ function getCurrentUser(req) {
 }
 
 // Function to get all posts, sorted by latest first
-function getPosts() {
-    return posts.slice().reverse();
+// function getPosts() {
+//     return posts.slice().reverse();
+// }
+
+async function getPosts() {
+    try {
+        const db = await sqlite.open({ filename: dbFileName, driver: sqlite3.Database });
+
+        const posts = await db.all('SELECT * FROM posts');
+
+        await db.close();
+
+        return posts;
+    } catch (error) {
+        console.error('Error fetching posts from database:', error);
+        throw error; // Propagate the error
+    }
 }
 
 // Function to add a new post
-function addPost(title, content, user) {
-    const newPost = {
-        id: posts.length + 1,
-        title,
-        content,
-        username: user.username,
-        timestamp: getCurrentDateTime(),
-        likes: 0
-    };
-    posts.push(newPost);
+// function addPost(title, content, user) {
+//     const newPost = {
+//         id: posts.length + 1,
+//         title,
+//         content,
+//         username: user.username,
+//         timestamp: getCurrentDateTime(),
+//         likes: 0
+//     };
+//     posts.push(newPost);
+// }
+
+async function addPost(title, content, username) {
+    try {
+        const db = await sqlite.open({ filename: dbFileName, driver: sqlite3.Database });
+
+        // Insert the new post into the posts table
+        await db.run(
+            'INSERT INTO posts (title, content, username, timestamp, likes) VALUES (?, ?, ?, datetime("now"), 0)',
+            [title, content, username]
+        );
+
+        await db.close();
+
+        console.log('Post added to the database successfully');
+    } catch (error) {
+        console.error('Error adding post to the database:', error);
+        throw error; // Propagate the error
+    }
 }
 
 const colors = [
