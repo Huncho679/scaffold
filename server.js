@@ -352,8 +352,8 @@ function isAuthenticated(req, res, next) {
 
 function loginUser(req, res) {
     console.log("In loginUser function");
-    //const user = findUserByUsername(req.body.username);
-    const userExists = checkUserExists(req.body.username);
+    const user = findUserByUsername(req.body.username);
+    //const userExists = checkUserExists(req.body.username);
     if (!user) {
         res.redirect('/login?error=User doesn\'t exist');
     } else {
