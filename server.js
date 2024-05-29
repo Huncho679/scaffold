@@ -105,7 +105,7 @@ app.use(express.json());                            // Parse JSON bodies (as sen
 app.get('/', (req, res) => {
     const posts = getPosts();
     const user = getCurrentUser(req) || {};
-    res.render('home', { posts, user });
+    res.render('home', { posts, user, loggedIn: req.session.loggedIn });
 });
 
 // Register GET route is used for error response from registration
@@ -139,12 +139,22 @@ app.post('/posts', (req, res) => {
     addPost(title, content, user);
     res.status(200).redirect('/');
 });
-app.post('/like/:id', (req, res) => {
+app.post('/like/:id', isAuthenticated, (req, res) => {
     const postId = parseInt(req.params.id, 10);
+    const userId = req.session.userId;
     const post = posts.find(post => post.id === postId);
 
     if (post) {
-        post.likes += 1;
+        const userIndex = post.likedBy.indexOf(userId);
+        if (userIndex === -1) {
+            // User has not liked the post yet, so like it
+            post.likes += 1;
+            post.likedBy.push(userId);
+        } else {
+            // User has already liked the post, so unlike it
+            post.likes -= 1;
+            post.likedBy.splice(userIndex, 1);
+        }
         res.json({ success: true, likes: post.likes });
     } else {
         res.status(404).json({ success: false, message: 'Post not found' });
@@ -202,13 +212,13 @@ app.listen(PORT, () => {
 
 // Example data for posts and users
 let posts = [
-    { id: 1, title: 'Sample Post', content: 'This is a sample post.', username: 'SampleUser', timestamp: '2024-01-01 10:00', likes: 0 },
-    { id: 2, title: 'Another Post', content: 'This is another sample post.', username: 'AnotherUser', timestamp: '2024-01-02 12:00', likes: 0 },
-    { id: 3, title: 'Another Post', content: 'This is another sample post.', username: 'AnotherUser', timestamp: '2024-01-02 12:00', likes: 0 },
-    { id: 4, title: 'Another Post', content: 'This is another sample post.', username: 'AnotherUser', timestamp: '2024-01-02 12:00', likes: 0 },
-    { id: 5, title: 'Another Post', content: 'This is another sample post.', username: 'AnotherUser', timestamp: '2024-01-02 12:00', likes: 0 },
-    { id: 6, title: 'Another Post', content: 'This is another sample post.', username: 'AnotherUser', timestamp: '2024-01-02 12:00', likes: 0 },
-    { id: 7, title: 'Another Post', content: 'This is another sample post.', username: 'AnotherUser', timestamp: '2024-01-02 12:00', likes: 0 },
+    { id: 1, title: 'Sample Post', content: 'This is a sample post.', username: 'SampleUser', timestamp: '2024-01-01 10:00', likes: 0, likedBy: [] },
+    { id: 2, title: 'Another Post', content: 'This is another sample post.', username: 'AnotherUser', timestamp: '2024-01-02 12:00', likes: 0, likedBy: [] },
+    { id: 3, title: 'Another Post', content: 'This is another sample post.', username: 'AnotherUser', timestamp: '2024-01-02 12:00', likes: 0, likedBy: [] },
+    { id: 4, title: 'Another Post', content: 'This is another sample post.', username: 'AnotherUser', timestamp: '2024-01-02 12:00', likes: 0, likedBy: [] },
+    { id: 5, title: 'Another Post', content: 'This is another sample post.', username: 'AnotherUser', timestamp: '2024-01-02 12:00', likes: 0, likedBy: [] },
+    { id: 6, title: 'Another Post', content: 'This is another sample post.', username: 'AnotherUser', timestamp: '2024-01-02 12:00', likes: 0, likedBy: [] },
+    { id: 7, title: 'Another Post', content: 'This is another sample post.', username: 'AnotherUser', timestamp: '2024-01-02 12:00', likes: 0, likedBy: [] },
 ];
 let users = [
     { id: 1, username: 'SampleUser', avatar_url: undefined, memberSince: '2024-01-01 08:00' },
@@ -268,7 +278,11 @@ function isAuthenticated(req, res, next) {
     if (req.session.userId) {
         next();
     } else {
-        res.redirect('/login');
+        if (req.originalUrl.startsWith('/like/')) {
+            res.status(401).json({ success: false, message: 'Unauthorized' });
+        } else {
+            res.redirect('/login');
+        }
     }
 }
 
@@ -299,12 +313,14 @@ function isAuthenticated(req, res, next) {
 // }
 
 function loginUser(req, res) {
+    console.log("In loginUser function");
     const user = findUserByUsername(req.body.username);
     if (!user) {
         res.redirect('/login?error=User doesn\'t exist');
     } else {
         req.session.loggedIn = true;
-        req.session.userId = user.id; // Make sure to set the correct user ID
+        console.log("is logged in:" , req.session.loggedIn);
+        req.session.userId = user.id; // Ensure the correct user ID is set
         res.redirect('/');
     }
 }
