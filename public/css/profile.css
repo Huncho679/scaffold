@@ -1,0 +1,10 @@
+.profile-posts-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.profile-posts-list > * {
+    padding: 1rem;
+    
+}

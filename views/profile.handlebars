@@ -1,6 +1,9 @@
 {{! Use the main layout }}
 {{!< main }}
 
+<!-- Link to profile.css -->
+<link rel="stylesheet" href="/css/profile.css">
+
 <div class="profile-container flex justify-center gap-lg">
     <div class="profile-avatar">
         <!-- Display the user's avatar -->
@@ -24,15 +27,11 @@
     
     <!-- Conditional rendering of the user's posts -->
     {{#if posts.length}}
-        <div class="profile-posts-list flex flex-col gap-lg">
+        <div class="profile-posts-list">
             {{#each posts}}
-                {{!-- <li class="post">
-                    <h3>{{this.title}}</h3>
-                    <p>{{this.content}}</p>
-                    <p>Posted on: {{this.timestamp}}</p>
-                    <p>Likes: {{this.likes}}</p>
-                </li> --}}
-                {{> post this user=../user}}
+                <div>
+                    {{> post this user=../user}}
+                </div>
             {{/each}}
         </div>
     {{else}}
