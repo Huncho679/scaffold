@@ -4,6 +4,9 @@ const express = require('express');
 const expressHandlebars = require('express-handlebars');
 const session = require('express-session');
 const { createCanvas, loadImage } = require('canvas');
+const passport = require('passport');
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const crypto = require('crypto');
 require('dotenv').config();
 const sqlite = require('sqlite');
 const sqlite3 = require('sqlite3');
@@ -17,7 +20,10 @@ const sqlite3 = require('sqlite3');
 const app = express();
 const PORT = 3000;
 const accessToken = process.env.EMOJI_API_KEY;
+const CLIENT_ID = process.env.CLIENT_ID;
+const CLIENT_SECRET = process.env.CLIENT_SECRET;
 const dbFileName = 'your_database_file.db';
+const secretKey = crypto.randomBytes(32).toString('hex');
 let db = "";
 
 /*
@@ -116,7 +122,7 @@ app.set('views', './views');
 
 app.use(
     session({
-        secret: 'oneringtorulethemall',     // Secret key to sign the session ID cookie
+        secret: secretKey,     // Secret key to sign the session ID cookie
         resave: false,                      // Don't save session if unmodified
         saveUninitialized: false,           // Don't create session until something stored
         cookie: { secure: false },          // True if using https. Set to false for development without https
@@ -143,9 +149,91 @@ app.use(express.static('public'));                  // Serve static files
 app.use(express.urlencoded({ extended: true }));    // Parse URL-encoded bodies (as sent by HTML forms)
 app.use(express.json());                            // Parse JSON bodies (as sent by API clients)
 
+app.use(passport.initialize());
+app.use(passport.session());
+
+passport.use(new GoogleStrategy({
+    clientID: CLIENT_ID,
+    clientSecret: CLIENT_SECRET,
+    callbackURL: `http://localhost:${PORT}/auth/google/callback`
+}, (token, tokenSecret, profile, done) => {
+    return done(null, profile);
+}));
+
+passport.serializeUser((user, done) => {
+    done(null, user);
+});
+
+passport.deserializeUser((obj, done) => {
+    done(null, obj);
+});
+
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Routes
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+//^google routes
+// Google Login Route
+app.get('/auth/google',
+    passport.authenticate('google', { scope: ['profile'] })
+);
+
+// Google Callback Route
+app.get('/auth/google/callback',
+    passport.authenticate('google', { failureRedirect: '/login' }),
+    (req, res) => {
+        // Successful authentication
+        res.redirect('/');
+    }
+);
+
+// Logout Route
+app.get('/logout', (req, res) => {
+    req.logout((err) => {
+        if (err) { return next(err); }
+        res.redirect('/googleLogout');
+    });
+});
+
+// Logout Confirmation Route
+app.get('/googleLogout', (req, res) => {
+    res.render('googleLogout');
+});
+
+//registration routes and logid
+// Render Username Registration Page
+app.get('/registerUsername', (req, res) => {
+    res.render('registerUsername', { user: req.user });
+});
+
+// Handle Username Registration
+app.post('/registerUsername', async (req, res) => {
+    const { username } = req.body;
+    const hashedGoogleId = req.user.id;
+
+    try {
+        const db = await sqlite.open({ filename: dbFileName, driver: sqlite3.Database });
+
+        // Check if username already exists
+        const existingUser = await db.get('SELECT * FROM users WHERE username = ?', [username]);
+        if (existingUser) {
+            return res.render('registerUsername', { error: 'Username already taken', user: req.user });
+        }
+
+        // Insert new user into the database
+        await db.run(
+            'INSERT INTO users (username, hashedGoogleId, memberSince) VALUES (?, ?, ?)',
+            [username, hashedGoogleId, getCurrentDateTime()]
+        );
+
+        req.session.username = username;
+        res.redirect('/');
+    } catch (error) {
+        console.error('Error registering username:', error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
 
 // Home route: render home view with posts and user
 // We pass the posts and user variables into the home
@@ -411,6 +499,19 @@ function isAuthenticated(req, res, next) {
         }
     }
 }
+
+function ensureAuthenticated(req, res, next) {
+    if (req.isAuthenticated()) {
+        return next();
+    }
+    res.redirect('/login');
+}
+
+//protected route example
+// Example of a protected route
+app.get('/profile', ensureAuthenticated, (req, res) => {
+    res.render('profile', { user: req.user });
+});
 
 // Function
     function registerUser(req, res) {

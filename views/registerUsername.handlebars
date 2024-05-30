@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Register Username</title>
+</head>
+<body>
+    <form action="/registerUsername" method="POST">
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required>
+        <button type="submit">Register</button>
+    </form>
+    {{#if error}}
+        <p>{{error}}</p>
+    {{/if}}
+</body>
+</html>
