@@ -149,8 +149,6 @@ app.use(express.static('public'));                  // Serve static files
 app.use(express.urlencoded({ extended: true }));    // Parse URL-encoded bodies (as sent by HTML forms)
 app.use(express.json());                            // Parse JSON bodies (as sent by API clients)
 
-app.use(passport.initialize());
-app.use(passport.session());
 
 passport.use(new GoogleStrategy({
     clientID: CLIENT_ID,
@@ -168,6 +166,9 @@ passport.deserializeUser((obj, done) => {
     done(null, obj);
 });
 
+app.use(passport.initialize());
+app.use(passport.session());
+
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Routes
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -179,11 +180,33 @@ app.get('/auth/google',
 );
 
 // Google Callback Route
-app.get('/auth/google/callback',
+app.get('/auth/google/callback', 
     passport.authenticate('google', { failureRedirect: '/login' }),
-    (req, res) => {
-        // Successful authentication
-        res.redirect('/');
+    async (req, res) => {
+        const user = req.user;
+        const hashedGoogleId = user.id;
+
+        try {
+            const db = await sqlite.open({ filename: dbFileName, driver: sqlite3.Database });
+            const existingUser = await db.get('SELECT * FROM users WHERE hashedGoogleId = ?', [hashedGoogleId]);
+
+            if (existingUser) {
+                req.session.loggedIn = true;
+                req.session.userId = existingUser.id;
+                req.session.username = existingUser.username;
+                console.log('User found in database:', existingUser); // Log the existing user
+                console.log('Session:', req.session); // Log the session data
+                res.redirect('/');
+            } else {
+                req.session.user = user;
+                console.log('User not found, redirecting to register username'); // Log when user is not found
+                res.redirect('/registerUsername');
+            }
+            await db.close();
+        } catch (error) {
+            console.error('Error during authentication:', error);
+            res.redirect('/login');
+        }
     }
 );
 
@@ -203,13 +226,14 @@ app.get('/googleLogout', (req, res) => {
 //registration routes and logid
 // Render Username Registration Page
 app.get('/registerUsername', (req, res) => {
-    res.render('registerUsername', { user: req.user });
+    res.render('registerUsername', { user: req.session.user });
 });
 
 // Handle Username Registration
 app.post('/registerUsername', async (req, res) => {
+    console.log('Registering username for:', req.session.user);
     const { username } = req.body;
-    const hashedGoogleId = req.user.id;
+    const hashedGoogleId = req.session.user.id;
 
     try {
         const db = await sqlite.open({ filename: dbFileName, driver: sqlite3.Database });
@@ -217,7 +241,7 @@ app.post('/registerUsername', async (req, res) => {
         // Check if username already exists
         const existingUser = await db.get('SELECT * FROM users WHERE username = ?', [username]);
         if (existingUser) {
-            return res.render('registerUsername', { error: 'Username already taken', user: req.user });
+            return res.render('registerUsername', { error: 'Username already taken', user: req.session.user });
         }
 
         // Insert new user into the database
@@ -226,8 +250,11 @@ app.post('/registerUsername', async (req, res) => {
             [username, hashedGoogleId, getCurrentDateTime()]
         );
 
+        req.session.loggedIn = true;
+        req.session.userId = hashedGoogleId;
         req.session.username = username;
         res.redirect('/');
+        await db.close();
     } catch (error) {
         console.error('Error registering username:', error);
         res.status(500).send('Internal Server Error');
@@ -270,12 +297,29 @@ app.get('/post/:id', (req, res) => {
     // TODO: Render post detail page
 });
 app.post('/posts', async (req, res) => {
-    // TODO: Add a new post and redirect to home
+    // Retrieve title and content from the request body
     const { title, content } = req.body;
-    const user = await getCurrentUser(req);
-    addPost(title, content, user);
-    res.status(200).redirect('/');
+
+    // Create a user object from session data
+    const user = {
+        username: req.session.username
+    };
+
+    // Check if the user object is properly populated
+    if (!user.username) {
+        return res.status(400).send('User is not logged in or session is invalid');
+    }
+
+    try {
+        // Add the new post
+        await addPost(title, content, user);
+        res.status(200).redirect('/');
+    } catch (error) {
+        console.error('Error adding post:', error);
+        res.status(500).send('Internal Server Error');
+    }
 });
+
 app.post('/like/:id', isAuthenticated, async (req, res) => {
     const postId = parseInt(req.params.id, 10);
     const userId = req.session.userId;
@@ -334,8 +378,6 @@ app.get('/profile', isAuthenticated, async (req, res) => {
         res.redirect('/login');
     }
 });
-
-
 
 app.get('/avatar/:username', (req, res) => {
     const username = req.params.username;
@@ -484,21 +526,13 @@ function addUser(username) {
 
 // Middleware to check if user is authenticated
 function isAuthenticated(req, res, next) {
-    //console.log('isAuthenticated check:', req.session.userId); 
-    //console.log(getCurrentUser(req));
-    console.log(req.session.userId);
-    if (req.session.userId) {
-        console.log('in here');
-        next();
+    if (req.isAuthenticated()) {
+        return next();
     } else {
-        console.log('not in here');
-        if (req.originalUrl.startsWith('/like/')) {
-            res.status(401).json({ success: false, message: 'Unauthorized' });
-        } else {
-            res.redirect('/login');
-        }
+        res.redirect('/login');
     }
 }
+
 
 function ensureAuthenticated(req, res, next) {
     if (req.isAuthenticated()) {
@@ -595,13 +629,16 @@ function handleAvatar(req, res) {
 
 // Function to get the current user from session
 async function getCurrentUser(req) {
-    const userId = req.session.userId;
-    if (userId) {
-        const userToReturn = await findUserById(userId);
-        return userToReturn; // Assuming you have a function that finds a user by their ID
+    if (req.isAuthenticated()) {
+        const userId = req.user.id; // Assuming req.user contains the authenticated user's profile
+        const db = await sqlite.open({ filename: dbFileName, driver: sqlite3.Database });
+        const user = await db.get('SELECT * FROM users WHERE hashedGoogleId = ?', [userId]);
+        await db.close();
+        return user;
     }
     return null;
 }
+
 
 // Function to get all posts, sorted by latest first
 // function getPosts() {
@@ -637,6 +674,10 @@ async function getPosts() {
 // }
 
 async function addPost(title, content, user) {
+    if (!user || !user.username) {
+        throw new Error('User object or username is undefined');
+    }
+
     try {
         const db = await sqlite.open({ filename: dbFileName, driver: sqlite3.Database });
 
