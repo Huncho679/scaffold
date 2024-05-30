@@ -8,3 +8,9 @@
     padding: 1rem;
     
 }
+
+@media (max-width: 768px) {
+    .profile-posts-list {
+        display: block;
+    }
+}
