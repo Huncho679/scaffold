@@ -38,21 +38,31 @@
         </section>
 
         <section class="posts-list half">
-        <!-- recent posts -->
+            <!-- recent posts -->
 
-        <h2 class="text-align">Recent Posts</h2>
+            <h2 class="text-align">Recent Posts</h2>
 
-        {{#if posts.length}}
-        <ul class="flex flex-col gap align-center">
-            {{#each posts}}
-                <!-- you have to pass the user in to posts and this is the syntax -->
-                {{> post this user=../user}}            
-            {{/each}}
-        </ul>
-        {{else}}
-            <!-- no posts, oh no, what now? -->
-        {{/if}}
-    </section>
+            <div class="sort-options text-align">
+                <label for="sort-by">Sort by:</label>
+                <select id="sort-by" onchange="changeSort()">
+                    <option value="newest" {{#if (eq sortBy 'newest')}}selected{{/if}}>Newest</option>
+                    <option value="oldest" {{#if (eq sortBy 'oldest')}}selected{{/if}}>Oldest</option>
+                    <option value="most-likes" {{#if (eq sortBy 'most-likes')}}selected{{/if}}>Most Likes</option>
+                    <option value="least-likes" {{#if (eq sortBy 'least-likes')}}selected{{/if}}>Least Likes</option>
+                </select>
+            </div>
+
+            {{#if posts.length}}
+            <ul id="posts-list" class="flex flex-col gap align-center">
+                {{#each posts}}
+                    {{> post this user=../user}}            
+                {{/each}}
+            </ul>
+            {{else}}
+                <!-- no posts, oh no, what now? -->
+            {{/if}}
+        </section>
+
     {{else}}
         <section class="posts-list flex flex-col full align-center">
         <!-- recent posts -->
@@ -83,6 +93,13 @@
  so, put them in this array when the array is empty so 
  that you have them.
 */
+
+function changeSort() {
+        const sortBy = document.getElementById('sort-by').value;
+        const url = new URL(window.location);
+        url.searchParams.set('sortBy', sortBy);
+        window.location = url.toString();
+}
 
 let allEmojis = [];  // Global list to hold all emojis
 

@@ -26,32 +26,6 @@ const dbFileName = 'your_database_file.db';
 const secretKey = crypto.randomBytes(32).toString('hex');
 let db = "";
 
-/*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    Handlebars Helpers
-
-    Handlebars helpers are custom functions that can be used within the templates 
-    to perform specific tasks. They enhance the functionality of templates and 
-    help simplify data manipulation directly within the view files.
-
-    In this project, two helpers are provided:
-    
-    1. toLowerCase:
-       - Converts a given string to lowercase.
-       - Usage example: {{toLowerCase 'SAMPLE STRING'}} -> 'sample string'
-
-    2. ifCond:
-       - Compares two values for equality and returns a block of content based on 
-         the comparison result.
-       - Usage example: 
-            {{#ifCond value1 value2}}
-                <!-- Content if value1 equals value2 -->
-            {{else}}
-                <!-- Content if value1 does not equal value2 -->
-            {{/ifCond}}
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*/
-
 async function connect() {
     db = await sqlite.open({ filename: dbFileName, driver: sqlite3.Database });
 
@@ -108,6 +82,9 @@ app.engine(
                 }
                 return options.inverse(this);
             },
+            eq: function (a, b) {
+                return a === b;
+            }
         },
     })
 );
@@ -267,10 +244,12 @@ app.post('/registerUsername', async (req, res) => {
 // template
 //
 app.get('/', async (req, res) => {
-    const posts = await getPosts();
+    const sortBy = req.query.sortBy || 'newest';
+    const posts = await getPosts(sortBy);
     const user = await getCurrentUser(req) || {};
-    res.render('home', { posts, user, loggedIn: req.session.loggedIn });
+    res.render('home', { posts, user, loggedIn: req.session.loggedIn, sortBy });
 });
+
 
 // Register GET route is used for error response from registration
 //
@@ -371,13 +350,15 @@ app.post('/like/:id', isAuthenticated, async (req, res) => {
 
 app.get('/profile', isAuthenticated, async (req, res) => {
     const user = await getCurrentUser(req);
+    const sortBy = req.query.sortBy || 'newest';
     if (user) {
-        const userPosts = await getUserPosts(user.username);
-        res.render('profile', { profileError: req.query.error, user, posts: userPosts });
+        const userPosts = await getUserPosts(user.username, sortBy);
+        res.render('profile', { profileError: req.query.error, user, posts: userPosts, sortBy });
     } else {
         res.redirect('/login');
     }
 });
+
 
 app.get('/avatar/:username', (req, res) => {
     const username = req.params.username;
@@ -478,11 +459,21 @@ async function findUserById(userId) {
     }
 }
 
-async function getUserPosts(username) {
+async function getUserPosts(username, sortBy = 'newest') {
     try {
         const db = await sqlite.open({ filename: dbFileName, driver: sqlite3.Database });
 
-        const userPosts = await db.all('SELECT * FROM posts WHERE username = ?', [username]);
+        let userPosts = await db.all('SELECT * FROM posts WHERE username = ?', [username]);
+
+        if (sortBy === 'newest') {
+            userPosts = userPosts.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        } else if (sortBy === 'oldest') {
+            userPosts = userPosts.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        } else if (sortBy === 'most-likes') {
+            userPosts = userPosts.sort((a, b) => b.likes - a.likes);
+        } else if (sortBy === 'least-likes') {
+            userPosts = userPosts.sort((a, b) => a.likes - b.likes);
+        }
 
         await db.close();
 
@@ -491,7 +482,7 @@ async function getUserPosts(username) {
         console.error('Error fetching user posts from database:', error);
         throw error; // Propagate the error
     }
-}
+}   
 
 
 function getCurrentDateTime() {
@@ -645,11 +636,21 @@ async function getCurrentUser(req) {
 //     return posts.slice().reverse();
 // }
 
-async function getPosts() {
+async function getPosts(sortBy = 'newest') {
     try {
         const db = await sqlite.open({ filename: dbFileName, driver: sqlite3.Database });
 
-        const posts = await db.all('SELECT * FROM posts');
+        let posts = await db.all('SELECT * FROM posts');
+
+        if (sortBy === 'newest') {
+            posts = posts.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        } else if (sortBy === 'oldest') {
+            posts = posts.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        } else if (sortBy === 'most-likes') {
+            posts = posts.sort((a, b) => b.likes - a.likes);
+        } else if (sortBy === 'least-likes') {
+            posts = posts.sort((a, b) => a.likes - b.likes);
+        }
 
         await db.close();
 
@@ -659,6 +660,7 @@ async function getPosts() {
         throw error; // Propagate the error
     }
 }
+
 
 // Function to add a new post
 // function addPost(title, content, user) {

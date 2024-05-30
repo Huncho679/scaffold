@@ -25,6 +25,16 @@
     <!-- Display a custom title for the user's posts -->
     <h2>Your {{{postNeoType}}}s</h2>
     
+    <div class="sort-options text-align">
+        <label for="sort-by">Sort by:</label>
+        <select id="sort-by" onchange="changeSort()">
+            <option value="newest" {{#if (eq sortBy 'newest')}}selected{{/if}}>Newest</option>
+            <option value="oldest" {{#if (eq sortBy 'oldest')}}selected{{/if}}>Oldest</option>
+            <option value="most-likes" {{#if (eq sortBy 'most-likes')}}selected{{/if}}>Most Likes</option>
+            <option value="least-likes" {{#if (eq sortBy 'least-likes')}}selected{{/if}}>Least Likes</option>
+        </select>
+    </div>
+    
     <!-- Conditional rendering of the user's posts -->
     {{#if posts.length}}
         <div class="profile-posts-list">
@@ -38,3 +48,12 @@
         <p>You have not posted yet, poster.</p>
     {{/if}}
 </section>
+
+<script>
+    function changeSort() {
+        const sortBy = document.getElementById('sort-by').value;
+        const url = new URL(window.location);
+        url.searchParams.set('sortBy', sortBy);
+        window.location = url.toString();
+    }
+</script>
