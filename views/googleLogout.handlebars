@@ -2,8 +2,37 @@
 <html>
 <head>
     <title>Logged Out</title>
+    <link rel="stylesheet" type="text/css" href="styles.css">
+    <link rel="stylesheet" type="text/css" href="profile.css">
+    <style>
+        .logged-out-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f4f8;
+        }
+
+        .logged-out-message {
+            text-align: center;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 2px 2px 8px 0px rgba(0, 0, 0, 0.2);
+            font-size: 18px;
+            color: #333;
+        }
+
+        .logged-out-message p {
+            margin: 0;
+        }
+    </style>
 </head>
 <body>
-    <p>You have been logged out.</p>
+    <div class="logged-out-container">
+        <div class="logged-out-message">
+            <p>You have been logged out.</p>
+        </div>
+    </div>
 </body>
 </html>

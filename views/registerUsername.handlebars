@@ -2,15 +2,74 @@
 <html>
 <head>
     <title>Register Username</title>
+    <link rel="stylesheet" type="text/css" href="styles.css">
+    <style>
+        .register-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f4f8;
+        }
+
+        .register-form {
+            text-align: center;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 2px 2px 8px 0px rgba(0, 0, 0, 0.2);
+            font-size: 18px;
+            color: #333;
+        }
+
+        .register-form form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .register-form label {
+            font-size: 16px;
+        }
+
+        .register-form input {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .register-form button {
+            padding: 10px;
+            background-color: #dbe4ff;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .register-form button:hover {
+            background-color: #91a7ff;
+        }
+
+        .register-form p {
+            margin: 0;
+            color: red;
+        }
+    </style>
 </head>
 <body>
-    <form action="/registerUsername" method="POST">
-        <label for="username">Username:</label>
-        <input type="text" id="username" name="username" required>
-        <button type="submit">Register</button>
-    </form>
-    {{#if error}}
-        <p>{{error}}</p>
-    {{/if}}
+    <div class="register-container">
+        <div class="register-form">
+            <form action="/registerUsername" method="POST">
+                <label for="username">Username:</label>
+                <input type="text" id="username" name="username" required>
+                <button type="submit">Register</button>
+            </form>
+            {{#if error}}
+                <p>{{error}}</p>
+            {{/if}}
+        </div>
+    </div>
 </body>
 </html>

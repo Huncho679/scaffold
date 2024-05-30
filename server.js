@@ -10,8 +10,8 @@ const crypto = require('crypto');
 require('dotenv').config();
 const sqlite = require('sqlite');
 const sqlite3 = require('sqlite3');
-// require("./populatedb")
-// require("./showdb")
+require("./populatedb")
+require("./showdb")
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //& Configuration and Setup - express application created, port set to 3000

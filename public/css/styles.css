@@ -477,6 +477,101 @@ body {
     background-color: green;
 }
 
+/* &POST MEDIA QUERIES */
+
+
+
+.post {
+    display: flex;
+    gap: 20px;
+    width: 100%;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 2px 2px 8px 0px rgba(0, 0, 0, 0.1);
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+.post-avatar img {
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+}
+
+@media (max-width: 768px) {
+    .post {
+        flex-direction: column;
+        gap: 10px;
+        padding: 15px;
+    }
+
+    .post-avatar {
+        align-self: center;
+    }
+
+    .post-avatar img {
+        width: 60px;
+        height: 60px;
+    }
+
+    .post-content {
+        width: 100%;
+        padding: 0;
+    }
+
+    .post-status-bar {
+        justify-content: flex-start;
+        flex-wrap: nowrap;
+        gap: 10px;
+    }
+
+    .post-status-bar .trash-btn, 
+    .post-status-bar .like-btn {
+        order: 1;
+    }
+
+    .post-status-bar p {
+        order: 2;
+        flex: 1;
+    }
+}
+
+@media (max-width: 576px) {
+    .post {
+        padding: 10px;
+    }
+
+    .post-avatar img {
+        width: 50px;
+        height: 50px;
+    }
+
+    .post-content p {
+        font-size: 14px;
+        word-break: break-word;
+    }
+
+    .post-status-bar {
+        flex-direction: row;
+        align-items: center;
+        gap: 5px;
+    }
+}
+
+@media (max-width: 400px) {
+    .post-avatar img {
+        width: 40px;
+        height: 40px;
+    }
+
+    .post-content p {
+        font-size: 12px;
+    }
+}
+
+
+
 /* Media Queries for Responsive Design */
 
 @media (max-width: 1200px) {
