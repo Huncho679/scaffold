@@ -7,8 +7,8 @@ const { createCanvas, loadImage } = require('canvas');
 require('dotenv').config();
 const sqlite = require('sqlite');
 const sqlite3 = require('sqlite3');
-//require("./populatedb")
-//require("./showdb")
+// require("./populatedb")
+// require("./showdb")
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //& Configuration and Setup - express application created, port set to 3000
@@ -64,13 +64,28 @@ async function connect() {
             content TEXT NOT NULL,
             username TEXT NOT NULL,
             timestamp DATETIME NOT NULL,
-            likes INTEGER NOT NULL
+            likes INTEGER NOT NULL DEFAULT 0,
+            likedBy TEXT DEFAULT '[]'
         );
     `);
 
+    // Add the likedBy column if it doesn't exist
+    try {
+        await db.exec('ALTER TABLE posts ADD COLUMN likedBy TEXT DEFAULT \'[]\'');
+    } catch (error) {
+        if (error.code !== 'SQLITE_ERROR' || !error.message.includes('duplicate column name')) {
+            throw error;
+        }
+        // If the column already exists, ignore the error
+    }
+
+    // Log the schema
+    const schema = await db.all('PRAGMA table_info(posts)');
+    console.log('Posts Table Schema:', schema);
+
     console.log('Established Connection with Database');
-    //await db.close();
 }
+
 
 //& Set up Handlebars as the view engine and defines custom helpers
 
@@ -118,9 +133,11 @@ app.use((req, res, next) => {
     res.locals.postNeoType = 'Post';
     res.locals.loggedIn = req.session.loggedIn || false;
     res.locals.userId = req.session.userId || '';
+    res.locals.username = req.session.username || ''; // Ensure username is available
     res.locals.apiKey = accessToken;
     next();
 });
+
 
 app.use(express.static('public'));                  // Serve static files
 app.use(express.urlencoded({ extended: true }));    // Parse URL-encoded bodies (as sent by HTML forms)
@@ -171,36 +188,65 @@ app.post('/posts', async (req, res) => {
     addPost(title, content, user);
     res.status(200).redirect('/');
 });
-app.post('/like/:id', isAuthenticated, (req, res) => {
+app.post('/like/:id', isAuthenticated, async (req, res) => {
     const postId = parseInt(req.params.id, 10);
     const userId = req.session.userId;
-    const post = posts.find(post => post.id === postId);
 
-    if (post) {
-        const userIndex = post.likedBy.indexOf(userId);
-        if (userIndex === -1) {
-            // User has not liked the post yet, so like it
-            post.likes += 1;
-            post.likedBy.push(userId);
+    console.log(`Received like request for post: ${postId} by user: ${userId}`);
+
+    try {
+        const db = await sqlite.open({ filename: dbFileName, driver: sqlite3.Database });
+
+        // Fetch the post
+        const post = await db.get('SELECT * FROM posts WHERE id = ?', [postId]);
+
+        if (post) {
+            let likedBy = [];
+            if (post.likedBy) {
+                try {
+                    likedBy = JSON.parse(post.likedBy);
+                } catch (error) {
+                    console.error(`Failed to parse likedBy JSON for post ${postId}:`, error);
+                }
+            }
+
+            const userIndex = likedBy.indexOf(userId);
+            if (userIndex === -1) {
+                // User has not liked the post yet, so like it
+                likedBy.push(userId);
+                post.likes += 1;
+            } else {
+                // User has already liked the post, so unlike it
+                likedBy.splice(userIndex, 1);
+                post.likes -= 1;
+            }
+
+            // Update the post
+            await db.run('UPDATE posts SET likes = ?, likedBy = ? WHERE id = ?', [post.likes, JSON.stringify(likedBy), postId]);
+
+            res.json({ success: true, likes: post.likes, liked: userIndex === -1 });
         } else {
-            // User has already liked the post, so unlike it
-            post.likes -= 1;
-            post.likedBy.splice(userIndex, 1);
+            res.status(404).json({ success: false, message: 'Post not found' });
         }
-        res.json({ success: true, likes: post.likes });
-    } else {
-        res.status(404).json({ success: false, message: 'Post not found' });
+
+        await db.close();
+    } catch (error) {
+        console.error('Error liking post:', error);
+        res.status(500).json({ success: false, message: 'Internal Server Error' });
     }
 });
+
+
 app.get('/profile', isAuthenticated, async (req, res) => {
     const user = await getCurrentUser(req);
     if (user) {
-        const userPosts = getUserPosts(user.username);
+        const userPosts = await getUserPosts(user.username);
         res.render('profile', { profileError: req.query.error, user, posts: userPosts });
     } else {
         res.redirect('/login');
     }
 });
+
 
 
 app.get('/avatar/:username', (req, res) => {
@@ -226,9 +272,24 @@ app.post('/login', async (req, res) => {
 app.get('/logout', (req, res) => {
     logoutUser(req, res);
 });
-app.post('/delete/:id', isAuthenticated, (req, res) => {
-    // TODO: Delete a post if the current user is the owner
+app.post('/delete/:id', isAuthenticated, async (req, res) => {
+    const postId = parseInt(req.params.id, 10);
+    const username = req.session.username; // Get the username from the session
+
+    console.log("Delete request for post:", postId, "by user:", username);
+
+    try {
+        const result = await deletePost(postId, username);
+        if (result.success) {
+            res.json({ success: true });
+        } else {
+            res.status(404).json(result);
+        }
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Internal Server Error' });
+    }
 });
+
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Server Activation
@@ -287,9 +348,21 @@ async function findUserById(userId) {
     }
 }
 
-function getUserPosts(username) {
-    return posts.filter(post => post.username === username);
+async function getUserPosts(username) {
+    try {
+        const db = await sqlite.open({ filename: dbFileName, driver: sqlite3.Database });
+
+        const userPosts = await db.all('SELECT * FROM posts WHERE username = ?', [username]);
+
+        await db.close();
+
+        return userPosts;
+    } catch (error) {
+        console.error('Error fetching user posts from database:', error);
+        throw error; // Propagate the error
+    }
 }
+
 
 function getCurrentDateTime() {
     const now = new Date();
@@ -367,19 +440,18 @@ function isAuthenticated(req, res, next) {
 // }
 
 async function loginUser(req, res) {
-    //const user = findUserByUsername(req.body.username);
     const user = await checkUsernameExists(req.body.username);
-    console.log(user);
     if (!user) {
         res.redirect('/login?error=User doesn\'t exist');
     } else {
         req.session.loggedIn = true;
-        console.log("is logged in:" , req.session.loggedIn);
         req.session.userId = user.hashedGoogleId; // Ensure the correct user ID is set
-        console.log(req.session.userId);
+        req.session.username = user.username; // Store the username in the session
+        console.log("User logged in:", user.username);
         res.redirect('/');
     }
 }
+
 
 async function checkUsernameExists(username) {
     try {
@@ -481,6 +553,31 @@ async function addPost(title, content, user) {
         throw error; // Propagate the error
     }
 }
+
+async function deletePost(postId, username) {
+    try {
+        const db = await sqlite.open({ filename: dbFileName, driver: sqlite3.Database });
+
+        // Verify if the post exists and belongs to the user
+        const post = await db.get('SELECT * FROM posts WHERE id = ? AND username = ?', [postId, username]);
+        console.log(`Deleting post: ${postId} by user: ${username}`);
+
+        if (post) {
+            // Delete the post
+            await db.run('DELETE FROM posts WHERE id = ?', [postId]);
+            await db.close();
+            return { success: true };
+        } else {
+            await db.close();
+            console.log(`Post not found or user ${username} is not the owner of post ${postId}`);
+            return { success: false, message: 'Post not found or you are not the owner' };
+        }
+    } catch (error) {
+        console.error('Error deleting post from database:', error);
+        throw error; // Propagate the error
+    }
+}
+
 
 const colors = [
     '#FF5733', '#33FF57', '#3357FF', '#FF33A6', '#FF8F33', 

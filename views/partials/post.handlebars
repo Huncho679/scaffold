@@ -29,6 +29,7 @@
 
         let isLoggedIn = " {{ loggedIn }} ";
         console.log("sgsgf: ", isLoggedIn);
+        console.log(`Post ID: ${postId}`);
 
         if (isLoggedIn) {
             fetch(`/like/${postId}`, {
@@ -59,7 +60,7 @@
     function handleDeleteClick(event) {
         const buttonElement = event.target.closest('.trash-btn');
         const postId = buttonElement.getAttribute('data-id');
-
+        console.log(`Post ID: ${postId}`);
         fetch(`/delete/${postId}`, {
             method: 'POST',
         })
