@@ -8,7 +8,7 @@
         <section class="post-form half">
             <!-- make a header here -->
 
-            <h2 class="text-align">Create a New Post</h2>
+            <h2 class="text-align">List a New Item</h2>
 
             <form action="/posts" method="POST" enctype="multipart/form-data" class="flex flex-col gap">
                 <!-- title input field name = "title" -->
@@ -34,7 +34,7 @@
         <section class="posts-list half">
             <!-- recent posts -->
 
-            <h2 class="text-align">Recent Posts</h2>
+            <h2 class="text-align">Recent Items for Sale</h2>
 
             <div class="sort-options text-align">
                 <label for="sort-by">Sort by:</label>
@@ -61,7 +61,7 @@
         <section class="posts-list flex flex-col full align-center">
         <!-- recent posts -->
 
-            <h2>Recent Posts</h2>
+            <h2>Recent Items for Sale</h2>
 
             {{#if posts.length}}
             <ul class="flex flex-col gap-lg">

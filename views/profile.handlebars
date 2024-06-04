@@ -21,32 +21,49 @@
     </section>
 </div>
 
-<section class="user-posts text-align">
-    <!-- Display a custom title for the user's posts -->
-    <h2>Your {{{postNeoType}}}s</h2>
-    
-    <div class="sort-options text-align">
-        <label for="sort-by">Sort by:</label>
-        <select id="sort-by" onchange="changeSort()">
-            <option value="newest" {{#if (eq sortBy 'newest')}}selected{{/if}}>Newest</option>
-            <option value="oldest" {{#if (eq sortBy 'oldest')}}selected{{/if}}>Oldest</option>
-            <option value="most-likes" {{#if (eq sortBy 'most-likes')}}selected{{/if}}>Most Likes</option>
-            <option value="least-likes" {{#if (eq sortBy 'least-likes')}}selected{{/if}}>Least Likes</option>
-        </select>
-    </div>
-    
-    <!-- Conditional rendering of the user's posts -->
-    {{#if posts.length}}
-        <div class="profile-posts-list">
-            {{#each posts}}
-                <div>
-                    {{> post this user=../user}}
-                </div>
-            {{/each}}
+<section class="content-container flex">
+    <section class="user-posts half">
+        <h2>My Listings</h2>
+        
+        <div class="sort-options text-align">
+            <label for="sort-by">Sort by:</label>
+            <select id="sort-by" onchange="changeSort()">
+                <option value="newest" {{#if (eq sortBy 'newest')}}selected{{/if}}>Newest</option>
+                <option value="oldest" {{#if (eq sortBy 'oldest')}}selected{{/if}}>Oldest</option>
+                <option value="most-likes" {{#if (eq sortBy 'most-likes')}}selected{{/if}}>Most Likes</option>
+                <option value="least-likes" {{#if (eq sortBy 'least-likes')}}selected{{/if}}>Least Likes</option>
+            </select>
         </div>
-    {{else}}
-        <p>You have not posted yet, poster.</p>
-    {{/if}}
+        
+        {{#if posts.length}}
+            <div class="profile-posts-list">
+                {{#each posts}}
+                    <div>
+                        {{> post this user=../user}}
+                    </div>
+                {{/each}}
+            </div>
+        {{else}}
+            <p>You have not listed any items for sale</p>
+        {{/if}}
+    </section>
+
+    <section class="user-bids half">
+        <h2>My Bids</h2>
+
+        {{#if bids.length}}
+            <div class="profile-posts-list">
+                {{#each bids}}
+                    <div>
+                        {{> post this user=../user}}
+                        <p>Your Bid: ${{bidAmount}}</p>
+                    </div>
+                {{/each}}
+            </div>
+        {{else}}
+            <p>You have not placed any bids</p>
+        {{/if}}
+    </section>
 </section>
 
 <script>

@@ -60,6 +60,17 @@ async function connect() {
             likes INTEGER NOT NULL DEFAULT 0,
             likedBy TEXT DEFAULT '[]'
         );
+
+        CREATE TABLE IF NOT EXISTS bids (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            itemId INTEGER NOT NULL,
+            username TEXT NOT NULL,
+            bidAmount INTEGER NOT NULL,
+            bidTime DATETIME NOT NULL,
+            FOREIGN KEY(itemId) REFERENCES posts(id),
+            FOREIGN KEY(username) REFERENCES users(username)
+        );
+        
     `);
 
     // Add the likedBy column if it doesn't exist
@@ -75,6 +86,24 @@ async function connect() {
     // Add the imageURL column if it doesn't exist
     try {
         await db.exec('ALTER TABLE posts ADD COLUMN imageURL TEXT');
+    } catch (error) {
+        if (error.code !== 'SQLITE_ERROR' || !error.message.includes('duplicate column name')) {
+            throw error;
+        }
+        // If the column already exists, ignore the error
+    }
+
+    try {
+        await db.exec('ALTER TABLE posts ADD COLUMN currentBid INTEGER DEFAULT 0');
+    } catch (error) {
+        if (error.code !== 'SQLITE_ERROR' || !error.message.includes('duplicate column name')) {
+            throw error;
+        }
+        // If the column already exists, ignore the error
+    }
+
+    try {
+        await db.exec('ALTER TABLE posts ADD COLUMN auctionEndTime DATETIME');
     } catch (error) {
         if (error.code !== 'SQLITE_ERROR' || !error.message.includes('duplicate column name')) {
             throw error;
@@ -108,6 +137,9 @@ app.engine(
             },
             eq: function (a, b) {
                 return a === b;
+            },
+            incrementBid: function (currentBid) {
+                return currentBid + 1; // Or any increment logic you prefer
             }
         },
     })
@@ -137,7 +169,7 @@ app.use(
 app.use((req, res, next) => {
     res.locals.appName = 'Food Blog';
     res.locals.copyrightYear = 2024;
-    res.locals.postNeoType = 'Post';
+    res.locals.postNeoType = 'Item';
     res.locals.loggedIn = req.session.loggedIn || false;
     res.locals.userId = req.session.userId || '';
     res.locals.username = req.session.username || ''; // Ensure username is available
@@ -262,6 +294,38 @@ app.post('/registerUsername', async (req, res) => {
     }
 });
 
+app.post('/bid/:id', isAuthenticated, async (req, res) => {
+    const itemId = parseInt(req.params.id, 10);
+    const { bidAmount } = req.body;
+    const username = req.session.username;
+
+    try {
+        await placeBid(itemId, username, bidAmount);
+        const updatedItem = await getItem(itemId); // Get the updated item details
+        res.status(200).json({ success: true, currentBid: updatedItem.currentBid });
+    } catch (error) {
+        console.error('Error placing bid:', error);
+        res.status(500).json({ success: false, message: 'Internal Server Error' });
+    }
+});
+
+app.get('/item/:id', async (req, res) => {
+    const itemId = parseInt(req.params.id, 10);
+
+    try {
+        const item = await getItem(itemId);
+        const bids = await getItemBids(itemId);
+        res.render('itemDetail', { item, bids, user: req.user });
+    } catch (error) {
+        console.error('Error fetching item:', error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+
+
+
+
 
 // Home route: render home view with posts and user
 // We pass the posts and user variables into the home
@@ -374,11 +438,13 @@ app.get('/profile', isAuthenticated, async (req, res) => {
     const sortBy = req.query.sortBy || 'newest';
     if (user) {
         const userPosts = await getUserPosts(user.username, sortBy);
-        res.render('profile', { profileError: req.query.error, user, posts: userPosts, sortBy });
+        const userBids = await getUserBids(user.username);
+        res.render('profile', { profileError: req.query.error, user, posts: userPosts, bids: userBids, sortBy });
     } else {
         res.redirect('/login');
     }
 });
+
 
 
 app.get('/avatar/:username', (req, res) => {
@@ -682,6 +748,42 @@ async function getPosts(sortBy = 'newest') {
     }
 }
 
+async function getUserBids(username) {
+    try {
+        const db = await sqlite.open({ filename: dbFileName, driver: sqlite3.Database });
+
+        const userBids = await db.all(`
+            SELECT posts.*, bids.bidAmount
+            FROM bids
+            JOIN posts ON bids.itemId = posts.id
+            WHERE bids.username = ?
+            ORDER BY bids.bidTime DESC
+        `, [username]);
+
+        await db.close();
+
+        return userBids;
+    } catch (error) {
+        console.error('Error fetching user bids from database:', error);
+        throw error; // Propagate the error
+    }
+}
+
+
+async function getItem(itemId) {
+    const db = await sqlite.open({ filename: dbFileName, driver: sqlite3.Database });
+    const item = await db.get('SELECT * FROM posts WHERE id = ?', [itemId]);
+    await db.close();
+    return item;
+}
+
+
+async function getItemBids(itemId) {
+    const db = await sqlite.open({ filename: dbFileName, driver: sqlite3.Database });
+    const bids = await db.all('SELECT * FROM bids WHERE itemId = ? ORDER BY bidTime DESC', [itemId]);
+    await db.close();
+    return bids;
+}
 
 // Function to add a new post
 // function addPost(title, content, user) {
@@ -740,6 +842,29 @@ async function deletePost(postId, username) {
         console.error('Error deleting post from database:', error);
         throw error; // Propagate the error
     }
+}
+
+async function placeBid(itemId, username, bidAmount) {
+    const db = await sqlite.open({ filename: dbFileName, driver: sqlite3.Database });
+
+    const item = await db.get('SELECT * FROM posts WHERE id = ?', [itemId]);
+
+    if (!item) {
+        throw new Error('Item not found');
+    }
+
+    if (bidAmount <= item.currentBid) {
+        throw new Error('Bid amount must be higher than current price');
+    }
+
+    await db.run(
+        'INSERT INTO bids (itemId, username, bidAmount, bidTime) VALUES (?, ?, ?, ?)',
+        [itemId, username, bidAmount, getCurrentDateTime()]
+    );
+
+    await db.run('UPDATE posts SET currentBid = ? WHERE id = ?', [bidAmount, itemId]);
+
+    await db.close();
 }
 
 

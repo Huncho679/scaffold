@@ -1,16 +1,175 @@
+/* profile.css */
+
+/* Container for profile and content sections */
+.profile-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-bottom: 1px solid #ddd;
+}
+
+.profile-avatar {
+    flex: 1;
+    text-align: center;
+}
+
+.profile-avatar img {
+    border-radius: 50%;
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    border: 2px solid #ddd;
+}
+
+.profile-info {
+    flex: 2;
+    padding: 20px;
+    text-align: left;
+}
+
+.profile-info h2 {
+    margin: 0;
+    font-size: 2em;
+}
+
+.profile-info p {
+    margin: 5px 0;
+    color: #666;
+}
+
+.content-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    padding: 20px;
+}
+
+.user-posts, .user-bids {
+    flex: 1;
+    padding: 20px;
+    margin: 10px;
+    background-color: #fff;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.user-posts h2, .user-bids h2 {
+    font-size: 1.5em;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.sort-options {
+    text-align: right;
+    margin-bottom: 20px;
+}
+
+.sort-options label {
+    margin-right: 10px;
+}
+
+.sort-options select {
+    padding: 5px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+}
+
 .profile-posts-list {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 
-.profile-posts-list > * {
-    padding: 1rem;
-    
+.profile-posts-list > div {
+    padding: 10px;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-@media (max-width: 768px) {
-    .profile-posts-list {
-        display: block;
-    }
+/* Post card styling */
+.post {
+    display: flex;
+    gap: 20px;
+    padding: 15px;
+    background-color: #fff;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.post-avatar img {
+    border-radius: 50%;
+}
+
+.post-content {
+    flex: 1;
+}
+
+.post-content p {
+    margin: 5px 0;
+}
+
+.post-content .bar {
+    border-bottom: 1px solid #ddd;
+    margin: 10px 0;
+}
+
+.post-status-bar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.post-status-bar p {
+    margin: 0;
+    color: #666;
+}
+
+.post-bid-section {
+    margin-top: 15px;
+}
+
+.post-bid-section form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.post-bid-section form input,
+.post-bid-section form button {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+}
+
+.post-bid-section form button {
+    background-color: #007bff;
+    color: #fff;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.post-bid-section form button:hover {
+    background-color: #0056b3;
+}
+
+.emoji-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.5em;
+}
+
+.post-button {
+    background-color: #28a745;
+    color: #fff;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.post-button:hover {
+    background-color: #218838;
 }

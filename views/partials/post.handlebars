@@ -1,4 +1,4 @@
-{{!-- Partial for a single post --}}
+{{!-- post.handlebars --}}
 <link rel="stylesheet" href="/css/styles.css">
 <div class="post flex gap full" id="{{id}}">
     <div class="post-avatar">
@@ -22,12 +22,21 @@
             <button class="like-btn" onclick="handleLikeClick(event)" data-id="{{id}}">♥</button>
             <p id="like-count-{{id}}">{{likes}} likes</p>
             <p>Posted by {{username}} on {{timestamp}}</p> 
-        </div>        
+        </div>
+
+        {{#unless (eq username user.username)}}
+        <div class="post-bid-section">
+            <p>Current Bid: $<span id="currentBid-{{id}}">{{currentBid}}</span></p>
+            <form onsubmit="handleBidSubmit(event, {{id}})" class="flex flex-col gap-sm">
+                <input type="number" name="bidAmount" placeholder="Enter your bid" min="{{incrementBid currentBid}}" required>
+                <button type="submit" class="bid-button">Place Bid</button>
+            </form>
+        </div>
+        {{/unless}}
     </div>
 </div>
 
 <script>
-    // The loggedIn value should be set in a way that it's available to the client-side script // This value comes from res.locals.loggedIn
     function handleLikeClick(event) {
         console.log("in here");
         const buttonElement = event.target;
@@ -79,8 +88,33 @@
         })
         .catch(error => console.error('Error:', error));
     }
-</script>
 
+    function handleBidSubmit(event, postId) {
+        event.preventDefault(); // Prevent the default form submission
+
+        const form = event.target;
+        const formData = new FormData(form);
+        const bidAmount = formData.get('bidAmount');
+
+        fetch(`/bid/${postId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ bidAmount })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const currentBidElement = document.getElementById(`currentBid-${postId}`);
+                currentBidElement.textContent = data.currentBid;
+            } else {
+                console.error('Failed to place bid');
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+</script>
 
 
 
