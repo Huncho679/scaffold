@@ -13,15 +13,15 @@
             <form action="/posts" method="POST" enctype="multipart/form-data" class="flex flex-col gap">
                 <!-- title input field name = "title" -->
                 <!-- text area input field name = "content" -->
-                <input type="text" placeholder="Title" name="title" required>
-                <textarea name="content" rows="25" cols="25" placeholder="Today I ate a Burrito and..." required></textarea>
+                <input type="text" placeholder="Product Name..." name="title" required>
+                <textarea name="content" rows="25" cols="25" placeholder="Product Description..." required></textarea>
 
                 <!-- file input field for image upload -->
                 <input type="file" name="image" accept="image/*">
 
                 <div class="form-actions flex gap-sm">
                     <button type="button" class="emoji-button" onclick="toggleEmojiPanel()">😀</button>
-                    <button type="submit" class="post-button">Post</button>
+                    <button type="submit" class="post-button">Post Listing</button>
                 </div>
             </form>
 
@@ -34,7 +34,7 @@
         <section class="posts-list half">
             <!-- recent posts -->
 
-            <h2 class="text-align">Recent Items for Sale</h2>
+            <h2 class="text-align">Recent Posts</h2>
 
             <div class="sort-options text-align">
                 <label for="sort-by">Sort by:</label>
