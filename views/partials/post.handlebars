@@ -7,8 +7,13 @@
     <div class="post-content preserve-newlines">
        <p><strong>{{title}}</strong></p>
        <p>{{content}}</p>
+       {{#if imageURL}}
+       <div class="post-image">
+           <img src="{{imageURL}}" alt="Post Image" width="200px">
+       </div>
+       {{/if}}
        <div class="bar"></div>
-        <div class="post-status-bar flex gap-sm align-center">
+       <div class="post-status-bar flex gap-sm align-center">
             {{#ifCond username user.username}}
                 <button class="trash-btn" onclick="handleDeleteClick(event)" data-id="{{id}}"><i class="fas fa-trash-alt"></i></button>
             {{else}}
@@ -75,6 +80,7 @@
         .catch(error => console.error('Error:', error));
     }
 </script>
+
 
 
 

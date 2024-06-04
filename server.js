@@ -8,8 +8,10 @@ const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const crypto = require('crypto');
 require('dotenv').config();
+const path = require('path');
 const sqlite = require('sqlite');
 const sqlite3 = require('sqlite3');
+const multer = require('multer');
 require("./populatedb")
 require("./showdb")
 
@@ -25,6 +27,17 @@ const CLIENT_SECRET = process.env.CLIENT_SECRET;
 const dbFileName = 'your_database_file.db';
 const secretKey = crypto.randomBytes(32).toString('hex');
 let db = "";
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'public/uploads/');
+    },
+    filename: (req, file, cb) => {
+        cb(null, Date.now() + path.extname(file.originalname));
+    }
+});
+
+const upload = multer({ storage: storage });
 
 async function connect() {
     db = await sqlite.open({ filename: dbFileName, driver: sqlite3.Database });
@@ -59,12 +72,23 @@ async function connect() {
         // If the column already exists, ignore the error
     }
 
+    // Add the imageURL column if it doesn't exist
+    try {
+        await db.exec('ALTER TABLE posts ADD COLUMN imageURL TEXT');
+    } catch (error) {
+        if (error.code !== 'SQLITE_ERROR' || !error.message.includes('duplicate column name')) {
+            throw error;
+        }
+        // If the column already exists, ignore the error
+    }
+
     // Log the schema
     const schema = await db.all('PRAGMA table_info(posts)');
     console.log('Posts Table Schema:', schema);
 
     console.log('Established Connection with Database');
 }
+
 
 
 //& Set up Handlebars as the view engine and defines custom helpers
@@ -275,23 +299,20 @@ app.get('/error', (req, res) => {
 app.get('/post/:id', (req, res) => {
     // TODO: Render post detail page
 });
-app.post('/posts', async (req, res) => {
-    // Retrieve title and content from the request body
+app.post('/posts', upload.single('image'), async (req, res) => {
     const { title, content } = req.body;
+    const imageURL = req.file ? `/uploads/${req.file.filename}` : '';
 
-    // Create a user object from session data
     const user = {
         username: req.session.username
     };
 
-    // Check if the user object is properly populated
     if (!user.username) {
         return res.status(400).send('User is not logged in or session is invalid');
     }
 
     try {
-        // Add the new post
-        await addPost(title, content, user);
+        await addPost(title, content, user, imageURL);
         res.status(200).redirect('/');
     } catch (error) {
         console.error('Error adding post:', error);
@@ -675,7 +696,7 @@ async function getPosts(sortBy = 'newest') {
 //     posts.push(newPost);
 // }
 
-async function addPost(title, content, user) {
+async function addPost(title, content, user, imageURL) {
     if (!user || !user.username) {
         throw new Error('User object or username is undefined');
     }
@@ -683,10 +704,9 @@ async function addPost(title, content, user) {
     try {
         const db = await sqlite.open({ filename: dbFileName, driver: sqlite3.Database });
 
-        // Insert the new post into the posts table
         await db.run(
-            'INSERT INTO posts (title, content, username, timestamp, likes) VALUES (?, ?, ?, ?, 0)',
-            [title, content, user.username, getCurrentDateTime()]
+            'INSERT INTO posts (title, content, username, timestamp, likes, likedBy, imageURL) VALUES (?, ?, ?, ?, 0, ?, ?)',
+            [title, content, user.username, getCurrentDateTime(), '[]', imageURL]
         );
 
         await db.close();
@@ -694,7 +714,7 @@ async function addPost(title, content, user) {
         console.log('Post added to the database successfully');
     } catch (error) {
         console.error('Error adding post to the database:', error);
-        throw error; // Propagate the error
+        throw error;
     }
 }
 

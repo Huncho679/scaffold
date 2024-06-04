@@ -10,13 +10,14 @@
 
             <h2 class="text-align">Create a New Post</h2>
 
-
-            <form action="/posts" method="POST" class="flex flex-col gap">
+            <form action="/posts" method="POST" enctype="multipart/form-data" class="flex flex-col gap">
                 <!-- title input field name = "title" -->
                 <!-- text area input field name = "content" -->
-                <input type="text" placeholder="Title" name="title">
-                <textarea name="content" rows="25" cols="25" placeholder="Today I ate a Burrito and..."></textarea>
+                <input type="text" placeholder="Title" name="title" required>
+                <textarea name="content" rows="25" cols="25" placeholder="Today I ate a Burrito and..." required></textarea>
 
+                <!-- file input field for image upload -->
+                <input type="file" name="image" accept="image/*">
 
                 <div class="form-actions flex gap-sm">
                     <button type="button" class="emoji-button" onclick="toggleEmojiPanel()">😀</button>
@@ -24,17 +25,10 @@
                 </div>
             </form>
 
-            {{!-- <div id="emoji-container" class="emoji-panel">
-                <!-- input field for the emoji search, use oninput="searchEmojis() -->
-                <!-- a div, id = "emoji-grid" -->
-                <input type="text" placeholder="Emojis" class="emoji-search full">
-                <div></div>
-            </div> --}}
             <div id="emoji-container" class="emoji-panel" style="display: none;">
                 <input type="text" id="emoji-search" placeholder="Search emojis..." oninput="searchEmojis()" class="emoji-search full">
                 <div id="emoji-grid"></div>
             </div>
-
         </section>
 
         <section class="posts-list half">
