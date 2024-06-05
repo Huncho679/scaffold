@@ -191,18 +191,6 @@ async function initializeDB() {
             currentBid: 0,
             auctionEndTime: null
           },
-          {
-            id: 8,
-            title: 'Water Bottle',
-            content: 'Water Bottle with Delicious Water',
-            username: 'jjohn679',
-            timestamp: '2024-06-05 11:44',
-            likes: 0,
-            likedBy: '[]',
-            imageURL: './public/uploads/1717614754690.jpeg',
-            currentBid: 0,
-            auctionEndTime: null
-          },
     ];
 
     // Insert sample data into the database
