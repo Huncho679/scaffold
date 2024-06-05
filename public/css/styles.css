@@ -100,7 +100,7 @@ body {
 }
 
 .btn {
-    background-color: #dbe4ff;
+    background-color: #74c0fc;
     border: none;
     border-radius: 5px;
     padding-top: 5px;
@@ -108,7 +108,7 @@ body {
 }
 
 .navbar {
-    background-color: #dbe4ff;
+    background-color: #74c0fc;
     width: 100%;
 }
 
@@ -130,7 +130,7 @@ body {
 .footer {
     width: 100%;
     height: 75px;
-    background-color: #dbe4ff;
+    background-color: #74c0fc;
 }
 
 .half {
@@ -149,7 +149,7 @@ body {
     padding-bottom: 10px;
     border-radius: 10px;
     border: 1px solid transparent;
-    background-color: #dbe4ff;
+    background-color: #74c0fc;
 }
 
 .post-button {
@@ -160,7 +160,7 @@ body {
     padding-bottom: 10px;
     border-radius: 10px;
     border: 1px solid transparent;
-    background-color: #dbe4ff;
+    background-color: #74c0fc;
 }
 
 .emoji-panel {
@@ -199,7 +199,7 @@ body {
 .bar {
     width: 100%;
     height: 1px;
-    background-color: #dbe4ff;
+    background-color: #74c0fc;
 }
 
 .like-btn {
@@ -245,6 +245,10 @@ body {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+}
+
+.bg {
+    background-image: url('../images/pattern-randomized.png');
 }
 
 .flex {
@@ -342,7 +346,7 @@ body {
 }
 
 .btn {
-    background-color: #dbe4ff;
+    background-color: #74c0fc;
     border: none;
     border-radius: 5px;
     padding-top: 5px;
@@ -350,7 +354,7 @@ body {
 }
 
 .navbar {
-    background-color: #dbe4ff;
+    background-color: #74c0fc;
     width: 100%;
 }
 
@@ -363,7 +367,7 @@ body {
 
 .list-item {
     text-decoration: none;
-    color: #91a7ff;
+    color: #1c7ed6;
 }
 
 .list-item:hover {
@@ -373,7 +377,7 @@ body {
 .footer {
     width: 100%;
     height: 75px;
-    background-color: #dbe4ff;
+    background-color: #74c0fc;
 }
 
 .half {
@@ -392,7 +396,7 @@ body {
     padding-bottom: 10px;
     border-radius: 10px;
     border: 1px solid transparent;
-    background-color: #dbe4ff;
+    background-color: #74c0fc;
 }
 
 .post-button {
@@ -403,7 +407,7 @@ body {
     padding-bottom: 10px;
     border-radius: 10px;
     border: 1px solid transparent;
-    background-color: #dbe4ff;
+    background-color: #74c0fc;
 }
 
 .emoji-panel {
@@ -425,6 +429,7 @@ body {
     box-shadow: 2px 2px 8px 0px rgba(0, 0, 0, 0.3);
     border-radius: 8px;
     width: 100%;
+    background-color: white;
 }
 
 .post-content {
@@ -442,7 +447,8 @@ body {
 .bar {
     width: 100%;
     height: 1px;
-    background-color: #dbe4ff;
+    background-color: #74c0fc;
+    margin-top: 10px;
 }
 
 .like-btn {

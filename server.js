@@ -159,7 +159,10 @@ app.engine(
             },
             gt: function (a, b) {
                 return a > b;
-            }
+            },
+            gt: function (a, b) {
+                return a > b;
+            },
         },
     })
 );
