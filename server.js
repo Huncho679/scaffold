@@ -183,7 +183,7 @@ app.use(
 //^ this locals middleware sets some default local variables that will be available in all views
 
 app.use((req, res, next) => {
-    res.locals.appName = 'Food Blog';
+    res.locals.appName = 'cBay'
     res.locals.copyrightYear = 2024;
     res.locals.postNeoType = 'Item';
     res.locals.loggedIn = req.session.loggedIn || false;
