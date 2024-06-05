@@ -155,10 +155,12 @@
             {{#ifCond username user.username}}
                 <button class="trash-btn" onclick="handleDeleteClick(event)" data-id="{{id}}"><i class="fas fa-trash-alt"></i></button>
                 {{#unless auctionEndTime}}
-                    <button class="end-auction-btn" onclick="handleEndAuctionClick(event)" data-id="{{id}}">End Auction</button>
+                    {{#if (gt currentBid 0)}}
+                        <button class="end-auction-btn" onclick="handleEndAuctionClick(event)" data-id="{{id}}">End Auction</button>
+                    {{/if}}
                 {{/unless}}
             {{else}}
-                
+
             {{/ifCond}}
             <button class="like-btn" onclick="handleLikeClick(event)" data-id="{{id}}">♥</button>
             <p id="like-count-{{id}}">{{likes}} likes</p>

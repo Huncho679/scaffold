@@ -156,6 +156,9 @@ app.engine(
             },
             incrementBid: function (currentBid) {
                 return currentBid + 1; // Or any increment logic you prefer
+            },
+            gt: function (a, b) {
+                return a > b;
             }
         },
     })
@@ -401,7 +404,6 @@ app.get('/', async (req, res) => {
     const user = await getCurrentUser(req) || {};
     res.render('home', { posts, user, loggedIn: req.session.loggedIn, sortBy });
 });
-
 
 // Register GET route is used for error response from registration
 //
@@ -837,7 +839,7 @@ async function getPosts(sortBy = 'newest') {
     try {
         const db = await sqlite.open({ filename: dbFileName, driver: sqlite3.Database });
 
-        let posts = await db.all('SELECT * FROM posts');
+        let posts = await db.all('SELECT * FROM posts WHERE auctionEndTime IS NULL');
 
         if (sortBy === 'newest') {
             posts = posts.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
