@@ -27,6 +27,11 @@ const CLIENT_SECRET = process.env.CLIENT_SECRET;
 const dbFileName = 'your_database_file.db';
 const secretKey = crypto.randomBytes(32).toString('hex');
 let db = "";
+const handlebars = require('handlebars');
+
+handlebars.registerHelper('or', function() {
+    return Array.prototype.slice.call(arguments, 0, -1).some(Boolean);
+});
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -70,27 +75,39 @@ async function connect() {
             FOREIGN KEY(itemId) REFERENCES posts(id),
             FOREIGN KEY(username) REFERENCES users(username)
         );
-        
+
+        CREATE TABLE IF NOT EXISTS sales (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            postId INTEGER NOT NULL,
+            username TEXT NOT NULL,
+            FOREIGN KEY(postId) REFERENCES posts(id),
+            FOREIGN KEY(username) REFERENCES users(username)
+        );
+
+        CREATE TABLE IF NOT EXISTS purchases (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            postId INTEGER NOT NULL,
+            username TEXT NOT NULL,
+            FOREIGN KEY(postId) REFERENCES posts(id),
+            FOREIGN KEY(username) REFERENCES users(username)
+        );
     `);
 
-    // Add the likedBy column if it doesn't exist
+    // Additional column checks and schema logs
     try {
         await db.exec('ALTER TABLE posts ADD COLUMN likedBy TEXT DEFAULT \'[]\'');
     } catch (error) {
         if (error.code !== 'SQLITE_ERROR' || !error.message.includes('duplicate column name')) {
             throw error;
         }
-        // If the column already exists, ignore the error
     }
 
-    // Add the imageURL column if it doesn't exist
     try {
         await db.exec('ALTER TABLE posts ADD COLUMN imageURL TEXT');
     } catch (error) {
         if (error.code !== 'SQLITE_ERROR' || !error.message.includes('duplicate column name')) {
             throw error;
         }
-        // If the column already exists, ignore the error
     }
 
     try {
@@ -99,7 +116,6 @@ async function connect() {
         if (error.code !== 'SQLITE_ERROR' || !error.message.includes('duplicate column name')) {
             throw error;
         }
-        // If the column already exists, ignore the error
     }
 
     try {
@@ -108,7 +124,6 @@ async function connect() {
         if (error.code !== 'SQLITE_ERROR' || !error.message.includes('duplicate column name')) {
             throw error;
         }
-        // If the column already exists, ignore the error
     }
 
     // Log the schema
@@ -117,6 +132,7 @@ async function connect() {
 
     console.log('Established Connection with Database');
 }
+
 
 
 
@@ -261,6 +277,54 @@ app.get('/googleLogout', (req, res) => {
 app.get('/registerUsername', (req, res) => {
     res.render('registerUsername', { user: req.session.user });
 });
+
+// End Auction Route
+// End Auction Route
+app.post('/end-auction/:id', isAuthenticated, async (req, res) => {
+    const postId = parseInt(req.params.id, 10);
+    const username = req.session.username; // Get the username from the session
+
+    try {
+        const db = await sqlite.open({ filename: dbFileName, driver: sqlite3.Database });
+
+        // Fetch the post
+        const post = await db.get('SELECT * FROM posts WHERE id = ?', [postId]);
+
+        if (post && post.username === username) {
+            // Fetch the highest bid
+            const highestBid = await db.get('SELECT * FROM bids WHERE itemId = ? ORDER BY bidAmount DESC LIMIT 1', [postId]);
+
+            if (highestBid) {
+                // Add post to seller's "My Sales"
+                await db.run(
+                    'INSERT INTO sales (postId, username) VALUES (?, ?)',
+                    [postId, username]
+                );
+
+                // Add post to buyer's "My Purchases"
+                await db.run(
+                    'INSERT INTO purchases (postId, username) VALUES (?, ?)',
+                    [postId, highestBid.username]
+                );
+
+                // Mark post as sold
+                await db.run('UPDATE posts SET auctionEndTime = ? WHERE id = ?', [new Date().toISOString(), postId]);
+            } else {
+                res.status(404).json({ success: false, message: 'No bids found for this post' });
+            }
+        } else {
+            res.status(404).json({ success: false, message: 'Post not found or you are not the owner' });
+        }
+
+        await db.close();
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error ending auction:', error);
+        res.status(500).json({ success: false, message: 'Internal Server Error' });
+    }
+});
+
+
 
 // Handle Username Registration
 app.post('/registerUsername', async (req, res) => {
@@ -436,16 +500,61 @@ app.post('/like/:id', isAuthenticated, async (req, res) => {
 app.get('/profile', isAuthenticated, async (req, res) => {
     const user = await getCurrentUser(req);
     const sortBy = req.query.sortBy || 'newest';
+
     if (user) {
         const userPosts = await getUserPosts(user.username, sortBy);
         const userBids = await getUserBids(user.username);
-        res.render('profile', { profileError: req.query.error, user, posts: userPosts, bids: userBids, sortBy });
+        const userSales = await getUserSales(user.username);
+        const userPurchases = await getUserPurchases(user.username);
+
+        res.render('profile', {
+            profileError: req.query.error,
+            user,
+            posts: userPosts,
+            bids: userBids,
+            sales: userSales,
+            purchases: userPurchases,
+            sortBy
+        });
     } else {
         res.redirect('/login');
     }
 });
 
+async function getUserSales(username) {
+    try {
+        const db = await sqlite.open({ filename: dbFileName, driver: sqlite3.Database });
+        const sales = await db.all(`
+            SELECT posts.*, sales.username AS seller
+            FROM sales
+            JOIN posts ON sales.postId = posts.id
+            WHERE sales.username = ?
+        `, [username]);
+        await db.close();
+        return sales;
+    } catch (error) {
+        console.error('Error fetching user sales from database:', error);
+        throw error;
+    }
+}
 
+
+async function getUserPurchases(username) {
+    try {
+        const db = await sqlite.open({ filename: dbFileName, driver: sqlite3.Database });
+        const purchases = await db.all(`
+            SELECT posts.*, purchases.username AS buyer
+            FROM purchases
+            JOIN posts ON purchases.postId = posts.id
+            WHERE purchases.username = ?
+        `, [username]);
+        await db.close();
+        return purchases;
+    } catch (error) {
+        console.error('Error fetching user purchases from database:', error);
+        throw error;
+    }
+}
 
 app.get('/avatar/:username', (req, res) => {
     const username = req.params.username;
@@ -508,13 +617,13 @@ app.listen(PORT, async () => {
 
 // Example data for posts and users
 let posts = [
-    { id: 1, title: 'Sample Post', content: 'This is a sample post.', username: 'SampleUser', timestamp: '2024-01-01 10:00', likes: 0, likedBy: [] },
-    { id: 2, title: 'Another Post', content: 'This is another sample post.', username: 'AnotherUser', timestamp: '2024-01-02 12:00', likes: 0, likedBy: [] },
-    { id: 3, title: 'Another Post', content: 'This is another sample post.', username: 'AnotherUser', timestamp: '2024-01-02 12:00', likes: 0, likedBy: [] },
-    { id: 4, title: 'Another Post', content: 'This is another sample post.', username: 'AnotherUser', timestamp: '2024-01-02 12:00', likes: 0, likedBy: [] },
-    { id: 5, title: 'Another Post', content: 'This is another sample post.', username: 'AnotherUser', timestamp: '2024-01-02 12:00', likes: 0, likedBy: [] },
-    { id: 6, title: 'Another Post', content: 'This is another sample post.', username: 'AnotherUser', timestamp: '2024-01-02 12:00', likes: 0, likedBy: [] },
-    { id: 7, title: 'Another Post', content: 'This is another sample post.', username: 'AnotherUser', timestamp: '2024-01-02 12:00', likes: 0, likedBy: [] },
+    // { id: 1, title: 'Sample Post', content: 'This is a sample post.', username: 'SampleUser', timestamp: '2024-01-01 10:00', likes: 0, likedBy: [] },
+    // { id: 2, title: 'Another Post', content: 'This is another sample post.', username: 'AnotherUser', timestamp: '2024-01-02 12:00', likes: 0, likedBy: [] },
+    // { id: 3, title: 'Another Post', content: 'This is another sample post.', username: 'AnotherUser', timestamp: '2024-01-02 12:00', likes: 0, likedBy: [] },
+    // { id: 4, title: 'Another Post', content: 'This is another sample post.', username: 'AnotherUser', timestamp: '2024-01-02 12:00', likes: 0, likedBy: [] },
+    // { id: 5, title: 'Another Post', content: 'This is another sample post.', username: 'AnotherUser', timestamp: '2024-01-02 12:00', likes: 0, likedBy: [] },
+    // { id: 6, title: 'Another Post', content: 'This is another sample post.', username: 'AnotherUser', timestamp: '2024-01-02 12:00', likes: 0, likedBy: [] },
+    // { id: 7, title: 'Another Post', content: 'This is another sample post.', username: 'AnotherUser', timestamp: '2024-01-02 12:00', likes: 0, likedBy: [] },
 ];
 let users = [
     { id: 1, username: 'SampleUser', avatar_url: undefined, memberSince: '2024-01-01 08:00' },
@@ -550,7 +659,7 @@ async function getUserPosts(username, sortBy = 'newest') {
     try {
         const db = await sqlite.open({ filename: dbFileName, driver: sqlite3.Database });
 
-        let userPosts = await db.all('SELECT * FROM posts WHERE username = ?', [username]);
+        let userPosts = await db.all('SELECT * FROM posts WHERE username = ? AND auctionEndTime IS NULL', [username]);
 
         if (sortBy === 'newest') {
             userPosts = userPosts.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
@@ -569,7 +678,8 @@ async function getUserPosts(username, sortBy = 'newest') {
         console.error('Error fetching user posts from database:', error);
         throw error; // Propagate the error
     }
-}   
+}
+ 
 
 
 function getCurrentDateTime() {
@@ -756,7 +866,7 @@ async function getUserBids(username) {
             SELECT posts.*, bids.bidAmount
             FROM bids
             JOIN posts ON bids.itemId = posts.id
-            WHERE bids.username = ?
+            WHERE bids.username = ? AND posts.auctionEndTime IS NULL
             ORDER BY bids.bidTime DESC
         `, [username]);
 
@@ -768,6 +878,7 @@ async function getUserBids(username) {
         throw error; // Propagate the error
     }
 }
+
 
 
 async function getItem(itemId) {

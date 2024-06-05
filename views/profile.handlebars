@@ -21,8 +21,8 @@
     </section>
 </div>
 
-<section class="content-container flex">
-    <section class="user-posts half">
+<section class="content-grid">
+    <section class="user-posts grid-item">
         <h2>My Listings</h2>
         
         <div class="sort-options text-align">
@@ -48,7 +48,7 @@
         {{/if}}
     </section>
 
-    <section class="user-bids half">
+    <section class="user-bids grid-item">
         <h2>My Bids</h2>
 
         {{#if bids.length}}
@@ -62,6 +62,36 @@
             </div>
         {{else}}
             <p>You have not placed any bids</p>
+        {{/if}}
+    </section>
+
+    <section class="user-sales grid-item">
+        <h2>My Sales</h2>
+        {{#if sales.length}}
+            <div class="profile-posts-list">
+                {{#each sales}}
+                    <div>
+                        {{> post this user=../user}}
+                    </div>
+                {{/each}}
+            </div>
+        {{else}}
+            <p>You have not made any sales</p>
+        {{/if}}
+    </section>
+
+    <section class="user-purchases grid-item">
+        <h2>My Purchases</h2>
+        {{#if purchases.length}}
+            <div class="profile-posts-list">
+                {{#each purchases}}
+                    <div>
+                        {{> post this user=../user inPurchases=true}}
+                    </div>
+                {{/each}}
+            </div>
+        {{else}}
+            <p>You have not made any purchases</p>
         {{/if}}
     </section>
 </section>

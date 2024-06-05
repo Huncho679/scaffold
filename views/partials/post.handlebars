@@ -1,4 +1,4 @@
-{{!-- post.handlebars --}}
+{{!-- post.handlebars
 <link rel="stylesheet" href="/css/styles.css">
 <div class="post flex gap full" id="{{id}}">
     <div class="post-avatar">
@@ -16,6 +16,7 @@
        <div class="post-status-bar flex gap-sm align-center">
             {{#ifCond username user.username}}
                 <button class="trash-btn" onclick="handleDeleteClick(event)" data-id="{{id}}"><i class="fas fa-trash-alt"></i></button>
+                <button class="end-auction-btn" onclick="handleEndAuctionClick(event)" data-id="{{id}}">End Auction</button>
             {{else}}
                 
             {{/ifCond}}
@@ -24,15 +25,15 @@
             <p>Posted by {{username}} on {{timestamp}}</p> 
         </div>
 
-        {{#unless (eq username user.username)}}
         <div class="post-bid-section">
             <p>Current Bid: $<span id="currentBid-{{id}}">{{currentBid}}</span></p>
+            {{#unless (eq username user.username)}}
             <form onsubmit="handleBidSubmit(event, {{id}})" class="flex flex-col gap-sm">
                 <input type="number" name="bidAmount" placeholder="Enter your bid" min="{{incrementBid currentBid}}" required>
                 <button type="submit" class="bid-button">Place Bid</button>
             </form>
+            {{/unless}}
         </div>
-        {{/unless}}
     </div>
 </div>
 
@@ -114,49 +115,162 @@
         })
         .catch(error => console.error('Error:', error));
     }
-</script>
+
+    function handleEndAuctionClick(event) {
+        const buttonElement = event.target;
+        const postId = buttonElement.getAttribute('data-id');
+        console.log(`Ending auction for post ID: ${postId}`);
+        
+        fetch(`/end-auction/${postId}`, {
+            method: 'POST',
+        })
+        .then(response => {
+            if (response.ok) {
+                document.getElementById(postId).remove();
+            } else {
+                console.error('Failed to end auction');
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+</script> --}}
 
 
-
-
-
-{{!-- {{! Partial for a single post }}
-<div class="post flex gap full" id={{id}}>
+{{!-- post.handlebars --}}
+<link rel="stylesheet" href="/css/styles.css">
+<div class="post flex gap full" id="{{id}}">
     <div class="post-avatar">
         <img src="/avatar/{{username}}" width="75px" height="75px">
     </div>
     <div class="post-content preserve-newlines">
-       <p>{{title}}</p>
+       <p><strong>{{title}}</strong></p>
        <p>{{content}}</p>
+       {{#if imageURL}}
+       <div class="post-image">
+           <img src="{{imageURL}}" alt="Post Image" width="200px">
+       </div>
+       {{/if}}
        <div class="bar"></div>
-        <div class="post-status-bar flex gap-sm align-center">
-            <!-- everything that is shown in the status bar -->
-            <!-- Heart = ♥ -->
-            <!-- font awesome  trashcan = <i class="fas fa-trash-alt"> </i>-->
+       <div class="post-status-bar flex gap-sm align-center">
             {{#ifCond username user.username}}
-                <button class="trash-btn"><i class="fas fa-trash-alt"></i></button>
+                <button class="trash-btn" onclick="handleDeleteClick(event)" data-id="{{id}}"><i class="fas fa-trash-alt"></i></button>
+                {{#unless auctionEndTime}}
+                    <button class="end-auction-btn" onclick="handleEndAuctionClick(event)" data-id="{{id}}">End Auction</button>
+                {{/unless}}
             {{else}}
                 
             {{/ifCond}}
-            <button class="like-btn" onclick="handleLikeClick(event)">♥</button>
-            <p>{{likes}} likes</p>
+            <button class="like-btn" onclick="handleLikeClick(event)" data-id="{{id}}">♥</button>
+            <p id="like-count-{{id}}">{{likes}} likes</p>
             <p>Posted by {{username}} on {{timestamp}}</p> 
-        </div>        
+        </div>
+
+        <div class="post-bid-section">
+            <p>{{#if auctionEndTime}}Winning Bid:{{else}}Current Bid:{{/if}} $<span id="currentBid-{{id}}">{{currentBid}}</span></p>
+            {{#unless (or (eq username user.username) inPurchases auctionEndTime)}}
+            <form onsubmit="handleBidSubmit(event, {{id}})" class="flex flex-col gap-sm">
+                <input type="number" name="bidAmount" placeholder="Enter your bid" min="{{incrementBid currentBid}}" required>
+                <button type="submit" class="bid-button">Place Bid</button>
+            </form>
+            {{/unless}}
+        </div>
     </div>
 </div>
+
 <script>
+        function handleLikeClick(event) {
+        console.log("in here");
+        const buttonElement = event.target;
+        const postId = buttonElement.getAttribute('data-id');
 
-    function handleLikeClick(event) {
-        const postId = Document.getElementById('')
+        let isLoggedIn = " {{ loggedIn }} ";
+        console.log("sgsgf: ", isLoggedIn);
+        console.log(`Post ID: ${postId}`);
 
+        if (isLoggedIn) {
+            fetch(`/like/${postId}`, {
+                method: 'POST',
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const likeCountElement = document.getElementById(`like-count-${postId}`);
+                    likeCountElement.textContent = `${data.likes} likes`;
 
+                    if (data.liked) {
+                        buttonElement.classList.add('liked');
+                    } else {
+                        buttonElement.classList.remove('liked');
+                    }
+                } else {
+                    console.error('Failed to like post');
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        } else {
+            // User is not logged in, do nothing or display a message
+            console.log('You must be logged in to like a post');
+        }
     }
 
     function handleDeleteClick(event) {
-        const buttonElement = event.target.closest('.delete-button');
-        const postId = buttonElement.getAttribute('data-id');        
+        const buttonElement = event.target.closest('.trash-btn');
+        const postId = buttonElement.getAttribute('data-id');
+        console.log(`Post ID: ${postId}`);
+        fetch(`/delete/${postId}`, {
+            method: 'POST',
+        })
+        .then(response => {
+            if (response.ok) {
+                document.getElementById(postId).remove();
+            } else {
+                console.error('Failed to delete post');
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
 
-        // you might want to "fetch" something...        
+        function handleBidSubmit(event, postId) {
+        event.preventDefault(); // Prevent the default form submission
+
+        const form = event.target;
+        const formData = new FormData(form);
+        const bidAmount = formData.get('bidAmount');
+
+        fetch(`/bid/${postId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ bidAmount })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const currentBidElement = document.getElementById(`currentBid-${postId}`);
+                currentBidElement.textContent = data.currentBid;
+            } else {
+                console.error('Failed to place bid');
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    function handleEndAuctionClick(event) {
+        const buttonElement = event.target;
+        const postId = buttonElement.getAttribute('data-id');
         
-    }    
-</script> --}}
+        fetch(`/end-auction/${postId}`, {
+            method: 'POST',
+        })
+        .then(response => {
+            if (response.ok) {
+                document.getElementById(postId).remove();
+            } else {
+                console.error('Failed to end auction');
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+</script>
+
